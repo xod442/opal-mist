@@ -1,8 +1,8 @@
-# Opal
+# Opal-Mist
 
-**Operational Priority and At-Risk Likelihood**
+**Mist Customer Risk Dashboard**
 
-A customer escalation risk tracking dashboard for HPE Networking. Account managers and sales engineers submit weekly status via Microsoft Forms; a CSV export is ingested into Opal to keep the team aligned on which customers need attention.
+A customer escalation risk tracking dashboard for the HPE Networking Mist team. A Mist-only fork of Opal — imports exclusively Mist architecture records from the Microsoft Forms CSV export. Non-Mist rows are automatically skipped.
 
 ---
 
@@ -15,7 +15,7 @@ A customer escalation risk tracking dashboard for HPE Networking. Account manage
 - **Engagement tracker** — table view of all customers with engagement fields and direct edit links
 - **Executive overview** — at-a-glance summary for leadership and QBRs
 - **Stale records** — top 20 customers longest without an update
-- **Weekly CSV ingest** — upload Microsoft Forms exports; duplicates and Mist rows filtered automatically
+- **Weekly CSV ingest** — upload Microsoft Forms exports; only Mist architecture rows are imported, duplicates filtered automatically
 - **Secure login** — bcrypt passwords, signed session cookies, forced password change on first login
 - **Self-registration** — new users can create their own account from the login page (hpe.com email required; user level only; admins can promote)
 - **User management** — create users, bulk import via CSV, enable/disable accounts, reset passwords (admin only)
@@ -27,10 +27,25 @@ A customer escalation risk tracking dashboard for HPE Networking. Account manage
 
 ---
 
+## Relationship to Opal
+
+Opal-Mist is a direct fork of [Opal](https://github.com/xod442/opal) with one key difference:
+
+| | Opal | Opal-Mist |
+|---|---|---|
+| Imports | Non-Mist rows | Mist rows only |
+| Skips | Mist rows | Non-Mist rows |
+| Port | 9090 | 9091 |
+| Database | `opal.db` | `opal-mist.db` |
+
+Both can run side by side on the same host.
+
+---
+
 ## Requirements
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (includes Docker Compose v2)
-- Available port 9090
+- Available port **9091**
 
 No Python or other dependencies needed on the host.
 
@@ -39,117 +54,70 @@ No Python or other dependencies needed on the host.
 ## Quick Start
 
 ```bash
-git clone https://github.com/xod442/opal.git
-cd opal
+git clone https://github.com/xod442/opal-mist.git
+cd opal-mist
 docker compose up -d --build
 ```
 
-Open **http://localhost:9090** in your browser.
+Open **http://localhost:9091** in your browser.
 
 **Default credentials:** `admin` / `admin`
 You will be required to change the password on first login.
 
 ---
 
-## Docker Hub Deployment
-
-Use this method to deploy Opal on a VM or any host without cloning the repo.
-
-### Publishing the image (one time)
-
-```bash
-docker login
-docker build -t xod442/opal:latest .
-docker push xod442/opal:latest
-```
-
-### Deploying on a clean host
-
-If Docker is not installed:
-```bash
-curl -fsSL https://get.docker.com | sh
-```
-
-Then:
-```bash
-mkdir -p data/backups
-docker run -d \
-  --name opal \
-  -p 9090:9090 \
-  -v $(pwd)/data:/data \
-  -e SECRET_KEY=your-secret-here \
-  xod442/opal:latest
-```
-
-Generate a strong secret key with:
-```bash
-python3 -c "import secrets; print(secrets.token_hex(32))"
-```
-
-Open **http://\<host-ip\>:9090** and log in with `admin` / `admin`. You will be prompted to set a new password.
-
-> Keep the `SECRET_KEY` value the same every time you start the container — changing it invalidates all active sessions.
-
----
-
 ## Clean Install
-
-These steps walk through a fresh deployment from scratch.
 
 ### 1. Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
-- Port **9090** available on the host
+- Port **9091** available on the host
 
 ### 2. Clone and start
 
 ```bash
-git clone https://github.com/xod442/opal.git
-cd opal
+git clone https://github.com/xod442/opal-mist.git
+cd opal-mist
 docker compose up -d --build
 ```
 
 The container will:
 - Pull the Python 3.12 base image and install dependencies
-- Create `./data/opal.db` with all tables on first startup
-- Start the web server on port 9090
+- Create `./data/opal-mist.db` with all tables on first startup
+- Start the web server on port 9091
 
 ### 3. First login
 
-1. Open **http://localhost:9090**
+1. Open **http://localhost:9091**
 2. Log in with `admin` / `admin`
 3. You will be redirected to a forced password change — set a strong password and continue
 4. The dashboard will load (empty until a CSV is ingested)
 
 ### 4. Ingest your first CSV
 
-Upload a Microsoft Forms export via **Admin → Upload CSV**, or use the command line:
-
-```bash
-mkdir -p csv
-cp ~/Downloads/engagement.csv csv/
-docker compose run --rm ingest
-```
+Upload a Microsoft Forms export via **Admin → Upload CSV**. Only rows where the *Current deployed Architecture* field starts with `Mist` will be imported — all other rows are skipped automatically.
 
 ### 5. Verify everything is working
 
 | Check | Expected |
 |---|---|
-| `docker compose ps` | `opal` container status **Up** |
+| `docker compose ps` | `opal-mist` container status **Up** |
 | `docker compose logs` | No errors, `Application startup complete` |
-| http://localhost:9090/login | Login page loads |
+| http://localhost:9091/login | Login page loads |
 | Login with new password | Redirects to dashboard |
 | Admin page | CSV upload, user management, email settings visible |
+
+---
 
 ### Forgot the admin password
 
 Run this command from your host — it resets the admin password to `admin` and forces a password change on next login:
 
 ```bash
-docker exec opal_opal_1 python3 -c "
+docker exec opal-mist-opal-mist-1 python3 -c "
 from passlib.context import CryptContext
 import sqlite3
 pwd_ctx = CryptContext(schemes=['bcrypt'], deprecated='auto')
-conn = sqlite3.connect('/data/opal.db')
+conn = sqlite3.connect('/data/opal-mist.db')
 conn.execute(\"UPDATE users SET password_hash=?, must_change_password=1 WHERE username='admin'\", (pwd_ctx.hash('admin'),))
 conn.commit()
 conn.close()
@@ -158,8 +126,6 @@ print('Done')
 ```
 
 > **Important:** Always run this inside the container via `docker exec`. Running it with the host Python will fail due to a bcrypt version mismatch.
-
-Log in with `admin` / `admin` and you will be prompted to set a new password immediately.
 
 ---
 
@@ -178,8 +144,6 @@ rm -rf data/
 docker compose up -d
 ```
 
-Both options recreate all tables and the default `admin` account automatically.
-
 ---
 
 ## Ingesting CSV Data
@@ -189,16 +153,9 @@ Both options recreate all tables and the default `admin` account automatically.
 2. Under **Upload CSV**, select the Microsoft Forms export file
 3. Click **Upload & ingest**
 
-### Via command line
-```bash
-mkdir -p csv
-cp ~/Downloads/engagement.csv csv/
-docker compose run --rm ingest
-```
-
 **Ingest rules:**
+- Only rows where *Current deployed Architecture* starts with `Mist` are imported
 - Rows are deduplicated on the Microsoft Forms `ID` column — re-ingesting the same file is safe
-- Rows where the *Current deployed Architecture* field starts with `Mist` are skipped
 - Microsoft Forms BOM encoding (`utf-8-sig`) is handled automatically
 
 ---
@@ -216,16 +173,6 @@ Go to **Admin → User Management**, fill in the username, email, temporary pass
 2. Edit the file with your users — columns are `username`, `email`, `password`, `role`
 3. Go to **Admin → User Management → Bulk Import via CSV**, choose the file, and click **Import users**
 4. The confirmation banner reports how many were created, skipped (duplicate username), or had errors
-
-**CSV format:**
-```csv
-username,email,password,role
-jdoe,jdoe@example.com,TempPass1!,user
-bsmith,bsmith@example.com,TempPass2!,admin
-```
-
-- `role` defaults to `user` if blank or omitted
-- Re-uploading the same file is safe — duplicate usernames are skipped
 
 ---
 
@@ -247,7 +194,7 @@ Set these in the `environment:` section of `docker-compose.yaml`:
 
 | Variable | Default | Description |
 |---|---|---|
-| `DB_PATH` | `/data/opal.db` | Path to the SQLite database inside the container |
+| `DB_PATH` | `/data/opal-mist.db` | Path to the SQLite database inside the container |
 | `BACKUP_DIR` | `/data/backups` | Directory for backup files |
 | `SECRET_KEY` | `opal-change-me-in-production` | HMAC key for session cookies — **change this in production** |
 
@@ -258,7 +205,7 @@ Data is persisted in `./data/` on the host filesystem and is unaffected by conta
 ## Project Structure
 
 ```
-opal/
+opal-mist/
 ├── app.py                  # FastAPI application
 ├── ingest.py               # Standalone CSV ingester
 ├── requirements.txt        # Python dependencies
@@ -266,7 +213,6 @@ opal/
 ├── docker-compose.yaml
 ├── admin-guide.html        # Full administrator guide (open in browser)
 ├── example_users.csv       # Template for bulk user import
-├── voiceover-script.md     # Voiceover script for intro video
 └── templates/
     ├── dashboard.html
     ├── detail.html
@@ -276,36 +222,9 @@ opal/
     ├── admin.html
     ├── audit.html
     ├── login.html
+    ├── register.html
     └── change_password.html
 ```
-
----
-
-## Administrator Guide
-
-A full administrator guide covering installation, user management, backup/restore, data model, environment variables, and troubleshooting is included as a self-contained HTML file:
-
-```
-open admin-guide.html
-```
-
----
-
-## Roadmap
-
-- [x] Heat-coded dashboard with metric cards
-- [x] Weekly CSV ingest (dedup + Mist filter)
-- [x] Detail and edit pages
-- [x] Executive overview
-- [x] Stale records page
-- [x] Additional notes field
-- [x] Secure login and user management
-- [x] Audit trail
-- [x] Email alerts for new Critical customers
-- [x] Week-over-week trend tracking
-- [x] Bulk user import via CSV
-- [x] Support page with engagement tracking fields
-- [x] Engagement tracker table with direct edit links
 
 ---
 
