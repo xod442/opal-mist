@@ -40,12 +40,14 @@ TEMP_ORDER = {
     "Hot - they are escalating": 2,
     "Concerned - they are complaining": 3,
     "Stable - but needs attention": 4,
+    "Happy - customer is satisfied": 5,
 }
 TEMP_LABEL = {
     "Critical - We are at risk of loosing them as a customer": "Critical",
     "Hot - they are escalating": "Hot",
     "Concerned - they are complaining": "Concerned",
     "Stable - but needs attention": "Stable",
+    "Happy - customer is satisfied": "Happy",
 }
 ARCH_COL = "Current deployed Architecture - Not what they want to get to, but what are they running now"
 
@@ -629,7 +631,7 @@ def dashboard(
 
     conn = get_db()
     metrics = {}
-    for label in ("Critical", "Hot", "Concerned", "Stable"):
+    for label in ("Critical", "Hot", "Concerned", "Stable", "Happy"):
         metrics[label] = conn.execute(
             "SELECT COUNT(*) FROM customers WHERE temperature_label = ?", (label,)
         ).fetchone()[0]
@@ -868,7 +870,7 @@ def executive(request: Request):
         return RedirectResponse(url="/login", status_code=303)
     conn = get_db()
     metrics = {}
-    for label in ("Critical", "Hot", "Concerned", "Stable"):
+    for label in ("Critical", "Hot", "Concerned", "Stable", "Happy"):
         metrics[label] = conn.execute(
             "SELECT COUNT(*) FROM customers WHERE temperature_label = ?", (label,)
         ).fetchone()[0]
