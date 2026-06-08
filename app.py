@@ -644,8 +644,10 @@ def dashboard(
 
     where, params = [], []
     if search:
-        where.append("(customer_name LIKE ? OR sales_engineer LIKE ? OR account_manager LIKE ? OR location LIKE ?)")
-        params += [f"%{search}%"] * 4
+        where.append("""(customer_name LIKE ? OR sales_engineer LIKE ? OR account_manager LIKE ?
+            OR location LIKE ? OR bu_plm_sponsor LIKE ? OR bu_tme_sponsor LIKE ?
+            OR current_status LIKE ? OR next_actions LIKE ? OR state LIKE ? OR category LIKE ?)""")
+        params += [f"%{search}%"] * 10
     if filter_temp:
         where.append("temperature_label = ?")
         params.append(filter_temp)
