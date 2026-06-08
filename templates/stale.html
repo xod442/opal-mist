@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stale Records — Opal-Mist</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
+    --text: #e2e8f0; --text2: #94a3b8; --accent: #4f9cf9;
+    --critical: #ef4444; --hot: #f97316; --concerned: #eab308; --stable: #22c55e;
+    --stale-low: #22c55e; --stale-med: #eab308; --stale-high: #f97316; --stale-critical: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header a { color: var(--accent); text-decoration: none; font-size: 13px; }
+  header a:hover { text-decoration: underline; }
+  .header-title h1 { font-size: 18px; font-weight: 700; }
+  .header-title .acronym { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .header-title .acronym span { color: var(--accent); }
+
+  .container { padding: 32px 40px; max-width: 1000px; }
+
+  .page-title { font-size: 24px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.3px; }
+  .page-sub { color: var(--text2); font-size: 13px; margin-bottom: 28px; }
+
+  /* Days badge — color by staleness */
+  .days-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .days-low      { background: rgba(34,197,94,0.12);   color: var(--stale-low);      border: 1px solid rgba(34,197,94,0.3); }
+  .days-med      { background: rgba(234,179,8,0.12);   color: var(--stale-med);      border: 1px solid rgba(234,179,8,0.3); }
+  .days-high     { background: rgba(249,115,22,0.12);  color: var(--stale-high);     border: 1px solid rgba(249,115,22,0.3); }
+  .days-critical { background: rgba(239,68,68,0.12);   color: var(--stale-critical); border: 1px solid rgba(239,68,68,0.3); }
+
+  .heat-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .badge-Critical  { background: rgba(239,68,68,0.12);  color: var(--critical); border: 1px solid rgba(239,68,68,0.3); }
+  .badge-Hot       { background: rgba(249,115,22,0.12); color: var(--hot);      border: 1px solid rgba(249,115,22,0.3); }
+  .badge-Concerned { background: rgba(234,179,8,0.12);  color: var(--concerned);border: 1px solid rgba(234,179,8,0.3); }
+  .badge-Stable    { background: rgba(34,197,94,0.12);  color: var(--stable);   border: 1px solid rgba(34,197,94,0.3); }
+
+  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 11px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .rank { font-size: 18px; font-weight: 800; color: var(--text2); text-align: center; }
+  .rank-1, .rank-2, .rank-3 { color: var(--critical); }
+
+  .cust-name { font-weight: 600; }
+  .cust-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  a.link { color: var(--accent); text-decoration: none; font-size: 12px; font-weight: 500; }
+  a.link:hover { text-decoration: underline; }
+  a.edit-link { color: var(--text2); text-decoration: none; font-size: 12px; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; margin-left: 6px; }
+  a.edit-link:hover { color: var(--text); border-color: var(--text2); }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    font-size: 12px;
+    color: var(--text2);
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/">← Dashboard</a>
+  <div class="header-title">
+    <h1>Opal-Mist — Stale Records</h1>
+    <div class="acronym">
+      <span>M</span>ist Customer Risk Dashboard
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="page-title">Top 20 — Longest Without Update</div>
+  <div class="page-sub">Customers ranked by how long it has been since their record was last reviewed or edited.</div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Under 30 days</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#eab308"></div> 30–60 days</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div> 60–90 days</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Over 90 days</div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Customer</th>
+          <th>Heat</th>
+          <th>At Risk</th>
+          <th>Last Updated</th>
+          <th>Days Stale</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in customers %}
+        {% set days = c.days_since or 0 %}
+        {% if days < 30 %}
+          {% set day_class = 'days-low' %}
+        {% elif days < 60 %}
+          {% set day_class = 'days-med' %}
+        {% elif days < 90 %}
+          {% set day_class = 'days-high' %}
+        {% else %}
+          {% set day_class = 'days-critical' %}
+        {% endif %}
+        <tr>
+          <td class="rank rank-{{ loop.index }}">{{ loop.index }}</td>
+          <td>
+            <div class="cust-name">{{ c.customer_name }}</div>
+            <div class="cust-meta">{{ c.location }} &nbsp;·&nbsp; AM: {{ c.account_manager or '—' }}</div>
+          </td>
+          <td><span class="heat-badge badge-{{ c.temperature_label }}">{{ c.temperature_label }}</span></td>
+          <td style="font-size:12px; color:var(--text2);">
+            {% if 'Yes' in c.at_risk %}<span style="color:#ef4444; font-weight:600;">Yes</span>
+            {% elif 'Not sure' in c.at_risk %}<span style="color:#eab308;">Not sure</span>
+            {% else %}No{% endif %}
+          </td>
+          <td style="font-size:12px; color:var(--text2);">{{ c.last_touched or '—' }}</td>
+          <td><span class="days-badge {{ day_class }}">{{ days }} day{% if days != 1 %}s{% endif %}</span></td>
+          <td style="white-space:nowrap;">
+            <a class="link" href="/customer/{{ c.id }}">Details →</a>
+            <a class="edit-link" href="/customer/{{ c.id }}/edit">Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>

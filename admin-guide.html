@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opal — Administrator Guide</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --accent: #4f9cf9;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --orange: #f97316;
+    --sidebar-w: 260px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 0 40px;
+    z-index: 100;
+  }
+
+  .sidebar-brand {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .sidebar-brand h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .sidebar-brand .sub {
+    font-size: 10px;
+    color: var(--text2);
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+  }
+  .sidebar-brand .sub span { color: var(--accent); }
+
+  .nav-section {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text2);
+    padding: 12px 20px 4px;
+    margin-top: 8px;
+  }
+
+  .nav-link {
+    display: block;
+    padding: 7px 20px;
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 13px;
+    border-left: 3px solid transparent;
+    transition: color 0.12s, border-color 0.12s;
+  }
+  .nav-link:hover { color: var(--text); border-left-color: var(--border); }
+  .nav-link.active { color: var(--accent); border-left-color: var(--accent); background: rgba(79,156,249,0.06); }
+
+  /* ── Main ── */
+  .main {
+    margin-left: var(--sidebar-w);
+    padding: 48px 56px;
+    max-width: 900px;
+  }
+
+  h1.page-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .page-subtitle {
+    color: var(--text2);
+    font-size: 14px;
+    margin-bottom: 48px;
+  }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 48px 0 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    scroll-margin-top: 32px;
+  }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 24px 0 10px;
+    scroll-margin-top: 32px;
+  }
+
+  p { margin-bottom: 14px; color: var(--text2); }
+  p strong { color: var(--text); }
+
+  ul, ol {
+    padding-left: 20px;
+    margin-bottom: 14px;
+    color: var(--text2);
+  }
+  li { margin-bottom: 6px; }
+  li strong { color: var(--text); }
+
+  /* Code blocks */
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 14px 0 20px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  code {
+    font-family: "SF Mono", "Fira Code", "Fira Mono", monospace;
+    color: #a5f3fc;
+  }
+  pre code { color: #a5f3fc; }
+  p code, li code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 12px;
+    color: #a5f3fc;
+  }
+
+  /* Callout boxes */
+  .callout {
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 13px;
+    border-left: 4px solid;
+  }
+  .callout-note    { background: rgba(79,156,249,0.08);  border-color: var(--accent);  color: #93c5fd; }
+  .callout-warning { background: rgba(234,179,8,0.08);   border-color: var(--yellow);  color: #fde047; }
+  .callout-danger  { background: rgba(239,68,68,0.08);   border-color: var(--red);     color: #fca5a5; }
+  .callout-tip     { background: rgba(34,197,94,0.08);   border-color: var(--green);   color: #86efac; }
+  .callout strong  { color: inherit; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 20px;
+    font-size: 13px;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 9px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: top;
+  }
+  td strong { color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  .tbl-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 14px 0 20px; }
+
+  /* Step numbers */
+  .steps { counter-reset: step; list-style: none; padding: 0; }
+  .steps li {
+    counter-increment: step;
+    padding: 12px 16px 12px 52px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 14px;
+    top: 13px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .steps-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 14px 0 20px;
+    overflow: hidden;
+  }
+
+  /* Badge */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .badge-blue   { background: rgba(79,156,249,0.15); color: var(--accent); }
+  .badge-green  { background: rgba(34,197,94,0.15);  color: var(--green); }
+  .badge-red    { background: rgba(239,68,68,0.15);  color: var(--red); }
+  .badge-yellow { background: rgba(234,179,8,0.15);  color: var(--yellow); }
+
+  /* Section anchor offset fix */
+  section { scroll-margin-top: 24px; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <h1>Opal</h1>
+    <div class="sub">
+      <span>O</span>perational <span>P</span>riority and<br>
+      <span>A</span>t-Risk <span>L</span>ikelihood
+    </div>
+  </div>
+
+  <div class="nav-section">Getting Started</div>
+  <a class="nav-link" href="#overview">Overview</a>
+  <a class="nav-link" href="#prerequisites">Prerequisites</a>
+  <a class="nav-link" href="#installation">Installation</a>
+  <a class="nav-link" href="#first-login">First Login</a>
+  <a class="nav-link" href="#clean-install">Clean Install Checklist</a>
+
+  <div class="nav-section">Operations</div>
+  <a class="nav-link" href="#starting-stopping">Starting &amp; Stopping</a>
+  <a class="nav-link" href="#ingest">Ingesting CSV Data</a>
+  <a class="nav-link" href="#email-alerts">Email Alerts</a>
+  <a class="nav-link" href="#backup-restore">Backup &amp; Restore</a>
+  <a class="nav-link" href="#export">Exporting Data</a>
+  <a class="nav-link" href="#delete-db">Delete Database</a>
+
+  <div class="nav-section">User Management</div>
+  <a class="nav-link" href="#self-registration">Self-Registration</a>
+  <a class="nav-link" href="#user-management">Managing Users</a>
+  <a class="nav-link" href="#password-policy">Password Policy</a>
+
+  <div class="nav-section">Dashboard</div>
+  <a class="nav-link" href="#dashboard">Main Dashboard</a>
+  <a class="nav-link" href="#detail-edit">Detail &amp; Edit</a>
+  <a class="nav-link" href="#support">Support Page</a>
+  <a class="nav-link" href="#engagement">Engagement Tracker</a>
+  <a class="nav-link" href="#executive">Executive View</a>
+  <a class="nav-link" href="#trends">Trend Tracker</a>
+  <a class="nav-link" href="#stale">Stale Records</a>
+  <a class="nav-link" href="#audit">Audit Log</a>
+
+  <div class="nav-section">Reference</div>
+  <a class="nav-link" href="#data-model">Data Model</a>
+  <a class="nav-link" href="#env-vars">Environment Variables</a>
+  <a class="nav-link" href="#file-layout">File Layout</a>
+  <a class="nav-link" href="#troubleshooting">Troubleshooting</a>
+</nav>
+
+<!-- ── Main content ── -->
+<main class="main">
+
+  <h1 class="page-title">Opal Administrator Guide</h1>
+  <p class="page-subtitle">Deployment, operations, and user management reference</p>
+
+  <!-- ── Overview ── -->
+  <section id="overview">
+    <h2>Overview</h2>
+    <p>
+      <strong>Opal</strong> (Operational Priority and At-Risk Likelihood) is an internal web application
+      for tracking HPE Networking customer escalation risk. Account managers and sales engineers submit
+      weekly status via Microsoft Forms; a CSV export is ingested into Opal to populate the dashboard.
+    </p>
+    <p>Key capabilities:</p>
+    <ul>
+      <li>Heat-coded customer dashboard — Critical, Hot, Concerned, Stable</li>
+      <li>Per-customer detail and edit pages</li>
+      <li>Executive overview with regional breakdown</li>
+      <li>Stale record detection (top 20 longest without an update)</li>
+      <li>Secure login with role-based access (admin / user)</li>
+      <li>Week-over-week heat trend tracking with dashboard indicators</li>
+      <li>Email alerts when a new Critical customer is ingested</li>
+      <li>Full audit trail of every database change</li>
+      <li>Automated backups twice daily (6 AM and 6 PM)</li>
+    </ul>
+    <p>The application runs as a single Docker container with a SQLite database persisted to the host filesystem.</p>
+  </section>
+
+  <!-- ── Prerequisites ── -->
+  <section id="prerequisites">
+    <h2>Prerequisites</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Requirement</th><th>Minimum version</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Docker Desktop</strong></td><td>4.x</td><td>Mac or Windows; includes Docker Compose</td></tr>
+          <tr><td><strong>Docker Compose</strong></td><td>v2</td><td>Bundled with Docker Desktop; use <code>docker compose</code> (no hyphen)</td></tr>
+          <tr><td><strong>Available port</strong></td><td>9090</td><td>Configurable in <code>docker-compose.yaml</code></td></tr>
+          <tr><td><strong>Disk space</strong></td><td>~500 MB</td><td>Python image + app; database is small</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-note">
+      <strong>Note:</strong> No Python installation is required on the host. Everything runs inside the container.
+    </div>
+  </section>
+
+  <!-- ── Installation ── -->
+  <section id="installation">
+    <h2>Installation</h2>
+
+    <h3>1. Clone the repository</h3>
+    <pre><code>git clone https://github.com/xod442/opal.git
+cd opal</code></pre>
+
+    <h3>2. Create the data directory</h3>
+    <p>Opal stores the database and backups in <code>./data/</code> on the host. Docker Compose creates this automatically on first run, but you can also create it manually:</p>
+    <pre><code>mkdir -p data/backups</code></pre>
+
+    <h3>3. (Optional) Set a production secret key</h3>
+    <p>
+      The default <code>SECRET_KEY</code> is fine for internal use but should be changed for any
+      internet-facing deployment. Edit <code>docker-compose.yaml</code> and add the environment variable:
+    </p>
+    <pre><code>environment:
+  DB_PATH: /data/opal.db
+  BACKUP_DIR: /data/backups
+  SECRET_KEY: your-random-secret-here</code></pre>
+
+    <h3>4. Build and start</h3>
+    <pre><code>docker compose up -d --build</code></pre>
+    <p>The first build downloads the Python base image and installs dependencies — this takes 1–2 minutes. Subsequent starts use the cached image and are nearly instant.</p>
+
+    <h3>5. Verify it is running</h3>
+    <pre><code>docker compose ps</code></pre>
+    <p>You should see the <code>opal-opal-1</code> container with status <strong>Up</strong>. Open <a href="http://localhost:9090" style="color:var(--accent);">http://localhost:9090</a> in a browser — you will be redirected to the login page.</p>
+  </section>
+
+  <!-- ── First Login ── -->
+  <section id="first-login">
+    <h2>First Login</h2>
+    <p>On first startup, Opal automatically creates a default administrator account:</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Field</th><th>Default value</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Username</strong></td><td><code>admin</code></td></tr>
+          <tr><td><strong>Password</strong></td><td><code>admin</code></td></tr>
+          <tr><td><strong>Role</strong></td><td>Admin</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warning">
+      <strong>Required:</strong> On first login you will be immediately redirected to the Change Password page. You cannot access the dashboard until a new password is set. Choose a password of at least 8 characters.
+    </div>
+
+    <div class="steps-wrap">
+      <ol class="steps">
+        <li>Open <code>http://localhost:9090</code> — you are redirected to <strong>/login</strong>.</li>
+        <li>Enter username <code>admin</code> and password <code>admin</code>, then click <strong>Sign in</strong>.</li>
+        <li>You are redirected to <strong>/change-password</strong>. Enter and confirm a new password (8+ characters).</li>
+        <li>You are redirected to the main dashboard. The header shows <em>Signed in: admin</em>.</li>
+        <li>Go to <strong>Admin → User Management</strong> to create accounts for your team.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ── Clean Install Checklist ── -->
+  <section id="clean-install">
+    <h2>Clean Install Checklist</h2>
+    <p>Use this checklist to confirm a fresh deployment is healthy before handing it off to the team.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Check</th><th>Expected result</th></tr></thead>
+        <tbody>
+          <tr><td><code>docker compose ps</code></td><td><code>opal</code> container status <strong>Up</strong></td></tr>
+          <tr><td><code>docker compose logs</code></td><td>No errors; last line is <code>Application startup complete</code></td></tr>
+          <tr><td>Open <code>http://localhost:9090</code></td><td>Redirects to <code>/login</code></td></tr>
+          <tr><td>Login with <code>admin / admin</code></td><td>Redirects to <strong>/change-password</strong></td></tr>
+          <tr><td>Set a new password</td><td>Redirects to dashboard — header shows <em>Signed in: admin</em></td></tr>
+          <tr><td>Click <strong>Admin</strong></td><td>Admin page loads with Upload CSV, User Management, and Email Alerts sections</td></tr>
+          <tr><td>Click <strong>Trends</strong></td><td>Trend Tracker page loads (empty until data is ingested)</td></tr>
+          <tr><td>Upload a CSV file</td><td>Confirmation banner shows inserted / duplicate / skipped counts</td></tr>
+          <tr><td>Dashboard after ingest</td><td>Customer rows appear with heat badges and trend indicators</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Resetting to factory defaults</h3>
+    <p>To wipe all data and start completely fresh — for example, when redeploying to a new host or clearing a test environment:</p>
+
+    <div class="callout callout-danger">
+      <strong>Destructive.</strong> This permanently deletes the database, all customer records, users (including the admin account), audit logs, backups, and email settings. There is no undo.
+    </div>
+
+    <pre><code>docker compose down
+rm -rf data/
+docker compose up -d</code></pre>
+
+    <p>
+      After the container restarts, Opal recreates the database with a fresh default <code>admin / admin</code>
+      account and empty tables. Follow the <a href="#first-login" style="color:var(--accent);">First Login</a> steps to set a new password.
+    </p>
+
+    <div class="callout callout-tip">
+      <strong>Tip:</strong> If you only want to reset the database but keep your backups, move <code>data/backups/</code> somewhere safe before deleting <code>data/</code>, then restore after the container comes back up.
+    </div>
+  </section>
+
+  <!-- ── Starting / Stopping ── -->
+  <section id="starting-stopping">
+    <h2>Starting &amp; Stopping</h2>
+
+    <h3>Start the application</h3>
+    <pre><code>docker compose up -d</code></pre>
+
+    <h3>Stop the application</h3>
+    <pre><code>docker compose down</code></pre>
+    <p>The database is in <code>./data/opal.db</code> on the host and is unaffected by stopping the container.</p>
+
+    <h3>View live logs</h3>
+    <pre><code>docker compose logs -f</code></pre>
+
+    <h3>Rebuild after a code update</h3>
+    <p>If you pull a new version from GitHub or edit any source files:</p>
+    <pre><code>docker compose down
+docker compose build --no-cache
+docker compose up -d</code></pre>
+
+    <h3>Restart the container</h3>
+    <pre><code>docker compose restart</code></pre>
+
+    <div class="callout callout-tip">
+      <strong>Auto-restart:</strong> The container is configured with <code>restart: unless-stopped</code>, so it automatically comes back up after a reboot or Docker restart.
+    </div>
+  </section>
+
+  <!-- ── Ingesting CSV ── -->
+  <section id="ingest">
+    <h2>Ingesting CSV Data</h2>
+    <p>
+      Customer data originates from a Microsoft Forms survey. Each week, the form owner exports the results
+      to a CSV and ingests it into Opal. There are two methods:
+    </p>
+
+    <h3>Method 1 — Admin upload (recommended)</h3>
+    <div class="steps-wrap">
+      <ol class="steps">
+        <li>Log in as an admin and click <strong>Admin</strong> in the dashboard header.</li>
+        <li>Under <strong>Upload CSV</strong>, click <strong>Choose File</strong> and select the export file.</li>
+        <li>Click <strong>Upload &amp; ingest</strong>.</li>
+        <li>A confirmation banner shows how many records were inserted, how many were duplicates, and how many Mist rows were skipped.</li>
+      </ol>
+    </div>
+
+    <h3>Method 2 — Command line (docker compose)</h3>
+    <p>Place the CSV file in the <code>./csv/</code> directory on the host, then run:</p>
+    <pre><code>mkdir -p csv
+cp ~/Downloads/engagement.csv csv/
+docker compose run --rm ingest</code></pre>
+
+    <h3>Ingest rules</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Rule</th><th>Behaviour</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Deduplication</strong></td>
+            <td>Each row is keyed on the Microsoft Forms <code>ID</code> column. Re-ingesting the same CSV is safe — existing rows are silently ignored.</td>
+          </tr>
+          <tr>
+            <td><strong>Mist filter</strong></td>
+            <td>Rows where the <em>Current deployed Architecture</em> field starts with "Mist" are skipped. These are a different product line and are not tracked in Opal.</td>
+          </tr>
+          <tr>
+            <td><strong>Encoding</strong></td>
+            <td>Microsoft Forms exports with a UTF-8 BOM (<code>utf-8-sig</code>). Opal handles this automatically.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── Email Alerts ── -->
+  <section id="email-alerts">
+    <h2>Email Alerts</h2>
+    <p>
+      Opal can send an email notification whenever a new <strong>Critical</strong> customer is added
+      during a CSV ingest. Alerts are delivered immediately after the upload completes.
+    </p>
+
+    <h3>Configuring SMTP</h3>
+    <div class="steps-wrap">
+      <ol class="steps">
+        <li>Log in as an admin and click <strong>Admin</strong>.</li>
+        <li>Under <strong>Email Alerts</strong>, fill in your SMTP settings (see table below).</li>
+        <li>Click <strong>Save settings</strong>.</li>
+        <li>Click <strong>Send test email</strong> to verify the settings work before enabling alerts.</li>
+        <li>Check the <strong>Enable email alerts</strong> toggle and save again.</li>
+      </ol>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Field</th><th>Example</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SMTP Host</strong></td><td><code>smtp.office365.com</code></td><td>Your mail server hostname</td></tr>
+          <tr><td><strong>SMTP Port</strong></td><td><code>587</code></td><td>587 = STARTTLS (default), 465 = SSL</td></tr>
+          <tr><td><strong>Username</strong></td><td><code>you@company.com</code></td><td>SMTP login username</td></tr>
+          <tr><td><strong>Password</strong></td><td><em>your password</em></td><td>Leave blank on save to keep the existing password</td></tr>
+          <tr><td><strong>From Address</strong></td><td><code>opal@company.com</code></td><td>Optional — defaults to username if left blank</td></tr>
+          <tr><td><strong>Send Alerts To</strong></td><td><code>team@company.com</code></td><td>Recipient email address</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>What the alert contains</h3>
+    <p>Each alert email includes:</p>
+    <ul>
+      <li>Customer name</li>
+      <li>Account Manager</li>
+      <li>Sales Engineer</li>
+      <li>Actively at risk status</li>
+      <li>Risk reasons</li>
+      <li>Link to the Opal dashboard</li>
+    </ul>
+    <p>
+      If multiple new Critical customers are in a single CSV upload, a separate email is sent for each one.
+      The ingest confirmation banner shows how many alerts were sent.
+    </p>
+
+    <div class="callout callout-note">
+      <strong>Note:</strong> Alert emails are only sent for <em>newly inserted</em> Critical customers.
+      Re-ingesting a CSV with existing records does not re-trigger alerts. Changing a customer's heat
+      level to Critical via the Edit page does not currently trigger an alert.
+    </div>
+
+    <h3>Disabling alerts</h3>
+    <p>
+      Uncheck the <strong>Enable email alerts</strong> toggle and save. SMTP settings are retained so
+      you can re-enable without re-entering credentials.
+    </p>
+
+    <h3>Common SMTP providers</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Provider</th><th>Host</th><th>Port</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Office 365</strong></td><td><code>smtp.office365.com</code></td><td>587</td></tr>
+          <tr><td><strong>Gmail</strong></td><td><code>smtp.gmail.com</code></td><td>587</td></tr>
+          <tr><td><strong>HPE internal</strong></td><td>Contact your IT team</td><td>587 or 465</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── Backup / Restore ── -->
+  <section id="backup-restore">
+    <h2>Backup &amp; Restore</h2>
+
+    <h3>Automatic backups</h3>
+    <p>
+      Opal automatically backs up the database twice daily — at <strong>6:00 AM</strong> and <strong>6:00 PM</strong>
+      server time. Backups are stored in <code>./data/backups/</code> as timestamped
+      <code>.db</code> files (e.g., <code>opal_backup_20260601_060000.db</code>).
+      The 20 most recent backups are kept; older ones are deleted automatically.
+    </p>
+
+    <h3>Manual backup</h3>
+    <div class="steps-wrap">
+      <ol class="steps">
+        <li>Log in as an admin and click <strong>Admin</strong>.</li>
+        <li>Under <strong>Backup Database</strong>, click <strong>Run backup now</strong>.</li>
+        <li>The new backup appears immediately in the <strong>Restore from Backup</strong> table.</li>
+      </ol>
+    </div>
+
+    <h3>Restoring from a backup</h3>
+    <div class="callout callout-warning">
+      <strong>Safety net:</strong> Before restoring, Opal automatically creates a backup of the current database. You can always undo a restore by restoring the backup that was created immediately before it.
+    </div>
+    <div class="steps-wrap">
+      <ol class="steps">
+        <li>Log in as an admin and click <strong>Admin</strong>.</li>
+        <li>In the <strong>Restore from Backup</strong> table, find the desired backup and click <strong>Restore</strong>.</li>
+        <li>Confirm the dialog. The page reloads with a confirmation message.</li>
+      </ol>
+    </div>
+
+    <h3>Secondary backup location</h3>
+    <p>
+      You can configure a second destination for every backup — useful for copying to a mounted NAS,
+      external drive, or any path accessible inside the container.
+    </p>
+    <div class="steps-wrap">
+      <ol class="steps">
+        <li>Log in as an admin and click <strong>Admin</strong>.</li>
+        <li>Under <strong>Backup Database → Secondary Backup Location</strong>, enter an absolute path
+            accessible inside the container (e.g. <code>/mnt/nas/opal-backups</code>).</li>
+        <li>Click <strong>Save</strong>.</li>
+      </ol>
+    </div>
+    <p>
+      Every subsequent backup — both scheduled and manual — will be copied to the secondary location in
+      addition to the primary <code>./data/backups/</code> folder. If the secondary path is unreachable,
+      the primary backup still completes normally. Clear the field and save to disable the secondary copy.
+    </p>
+    <div class="callout callout-warning">
+      The path must be reachable <em>inside the container</em>. Mount the target volume in
+      <code>docker-compose.yaml</code> under the <code>volumes:</code> key before using it here.
+    </div>
+
+    <h3>Backing up manually from the host</h3>
+    <p>The database is a plain SQLite file. You can copy it directly:</p>
+    <pre><code>cp data/opal.db data/opal_manual_backup_$(date +%Y%m%d).db</code></pre>
+  </section>
+
+  <!-- ── Export ── -->
+  <section id="export">
+    <h2>Exporting Data</h2>
+    <p>
+      The entire customer database can be exported to CSV at any time. The export includes all fields:
+      customer name, heat level, at-risk status, risk reasons, architecture, near-term goals, BU contact,
+      notes, and last modified date.
+    </p>
+    <div class="steps-wrap">
+      <ol class="steps">
+        <li>Log in as an admin and click <strong>Admin</strong>.</li>
+        <li>Under <strong>Export to CSV</strong>, click <strong>Download CSV</strong>.</li>
+        <li>The file downloads as <code>opal_export_YYYYMMDD_HHMMSS.csv</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ── Delete Database ── -->
+  <section id="delete-db">
+    <h2>Delete Database</h2>
+    <p>
+      The Delete Database function is available at the bottom of the Admin page. It permanently wipes
+      all customer records, users, audit logs, heat history, and email settings, then immediately
+      recreates a fresh empty database with the default <code>admin</code> account.
+    </p>
+
+    <div class="callout callout-danger">
+      <strong>Irreversible.</strong> All data is permanently deleted. Run a manual backup first if you need to preserve anything.
+    </div>
+
+    <div class="steps-wrap">
+      <ol class="steps">
+        <li>Log in as an admin and click <strong>Admin</strong>.</li>
+        <li>Scroll to <strong>Delete Database</strong> at the bottom of the page.</li>
+        <li>Type <code>DELETE</code> (all caps) in the confirmation field.</li>
+        <li>Click <strong>Delete database</strong>.</li>
+        <li>You are redirected to the login page. Log in with <code>admin</code> / <code>admin</code> and set a new password.</li>
+      </ol>
+    </div>
+
+    <h3>What happens after deletion</h3>
+    <p>Opal immediately recreates the database with all tables and a fresh default admin account. You do not need to restart the container. The action is recorded in the new audit log before the old database is removed.</p>
+
+    <div class="callout callout-note">
+      <strong>Note:</strong> Your session cookie becomes invalid after deletion because it references the old database. Opal redirects you to the login page automatically — log in with <code>admin / admin</code> and you will be prompted to set a new password.
+    </div>
+  </section>
+
+  <!-- ── Self-registration ── -->
+  <section id="self-registration">
+    <h2>Self-Registration</h2>
+    <p>
+      Users can create their own accounts without admin involvement. A <strong>Create an account</strong>
+      link appears below the sign-in form on the login page.
+    </p>
+
+    <h3>How it works</h3>
+    <div class="steps-wrap">
+      <ol class="steps">
+        <li>From the login page, click <strong>Create an account</strong>.</li>
+        <li>Enter a unique username, an <strong>@hpe.com</strong> email address, and a password (minimum 8 characters).</li>
+        <li>Click <strong>Create account</strong>.</li>
+        <li>On success, you are redirected to the login page with a confirmation message and can sign in immediately.</li>
+      </ol>
+    </div>
+
+    <h3>Account level</h3>
+    <p>
+      All self-registered accounts are created at <strong>user</strong> level. They can view the dashboard and
+      edit customer records, but cannot access the Admin page. An admin can promote the account to admin role
+      via <strong>Admin → User Management</strong> if needed.
+    </p>
+
+    <div class="callout callout-note">
+      <strong>HPE email required.</strong> Only <code>@hpe.com</code> addresses are accepted. The domain
+      is validated in the browser and again on the server — non-HPE addresses are rejected.
+    </div>
+    <div class="callout callout-note">
+      Self-registration is logged in the audit trail as a <code>create_user</code> action with the actor
+      shown as <code>self-register</code>.
+    </div>
+  </section>
+
+  <!-- ── User Management ── -->
+  <section id="user-management">
+    <h2>Managing Users</h2>
+    <p>Only admin-role users can access the Admin page and manage accounts.</p>
+
+    <h3>Creating a new user</h3>
+    <div class="steps-wrap">
+      <ol class="steps">
+        <li>Go to <strong>Admin → User Management</strong>.</li>
+        <li>Fill in the username, optional email, a temporary password, and role (<strong>user</strong> or <strong>admin</strong>).</li>
+        <li>Click <strong>Create user</strong>.</li>
+        <li>The new user will be required to change their password on first login.</li>
+      </ol>
+    </div>
+
+    <h3>Bulk importing users from CSV</h3>
+    <p>
+      To create multiple accounts at once, upload a CSV file from the <strong>Bulk Import via CSV</strong>
+      section of the User Management page.
+    </p>
+
+    <h4 style="font-size:13px; font-weight:700; color:var(--text); margin:16px 0 8px;">CSV format</h4>
+    <pre><code>username,email,password,role
+jdoe,jdoe@example.com,TempPass1!,user
+sjones,sjones@example.com,TempPass2!,user
+bsmith,bsmith@example.com,TempPass3!,admin</code></pre>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Column</th><th>Required</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>username</code></td><td>Yes</td><td>Must be unique — rows with duplicate usernames are skipped</td></tr>
+          <tr><td><code>email</code></td><td>No</td><td>Optional; leave blank if not needed</td></tr>
+          <tr><td><code>password</code></td><td>Yes</td><td>Temporary password — user must change it on first login</td></tr>
+          <tr><td><code>role</code></td><td>No</td><td><code>user</code> or <code>admin</code>; defaults to <code>user</code> if blank or invalid</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="steps-wrap">
+      <ol class="steps">
+        <li>Go to <strong>Admin → User Management</strong>.</li>
+        <li>Click the <strong>example_users.csv</strong> link to download a template, or prepare your own file in the format above.</li>
+        <li>Under <strong>Bulk Import via CSV</strong>, click <strong>Choose File</strong> and select your CSV.</li>
+        <li>Click <strong>Import users</strong>.</li>
+        <li>The confirmation banner reports how many accounts were created, how many were skipped (duplicate username), and how many rows had errors (missing username or password).</li>
+      </ol>
+    </div>
+
+    <div class="callout callout-note">
+      <strong>Safe to re-run.</strong> Re-uploading the same CSV is harmless — existing usernames are silently skipped, so no duplicates are created.
+    </div>
+
+    <h3>Disabling / enabling a user</h3>
+    <p>
+      Click <strong>Disable</strong> next to the user in the User Management table. Disabled users cannot log in.
+      Click <strong>Enable</strong> to restore access. You cannot disable your own account.
+    </p>
+
+    <h3>Resetting a password</h3>
+    <p>
+      Click <strong>Reset pw</strong> next to the user. Opal generates a random temporary password and
+      displays it in the confirmation banner at the top of the Admin page. Give that password to the user —
+      they will be required to set a new password on their next login.
+    </p>
+
+    <div class="callout callout-note">
+      <strong>Tip:</strong> There is no email-based password reset. You must relay the temporary password to the user out-of-band (Slack, Teams, etc.).
+    </div>
+
+    <h3>User roles</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Role</th><th>Can view dashboard</th><th>Can edit customers</th><th>Can access Admin</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-blue">admin</span></td><td>✓</td><td>✓</td><td>✓</td></tr>
+          <tr><td><span class="badge" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);">user</span></td><td>✓</td><td>✓</td><td>✗</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── Password Policy ── -->
+  <section id="password-policy">
+    <h2>Password Policy</h2>
+    <ul>
+      <li>Minimum <strong>8 characters</strong>.</li>
+      <li>Passwords are hashed with <strong>bcrypt</strong> — they are never stored in plain text.</li>
+      <li>Sessions are signed with <strong>HMAC</strong> and expire after <strong>8 hours</strong> of inactivity.</li>
+      <li>Any account created by an admin, or any account that has had its password reset, must change the password on next login before any other action is allowed.</li>
+      <li>Users can change their own password at any time via the <strong>Pwd</strong> link in the dashboard header.</li>
+    </ul>
+  </section>
+
+  <!-- ── Dashboard ── -->
+  <section id="dashboard">
+    <h2>Main Dashboard</h2>
+    <p>The dashboard is the primary view at <code>/</code>. It shows all customers currently in the database.</p>
+
+    <h3>Metric cards</h3>
+    <p>
+      The six cards at the top show counts: <strong>Total</strong>, <strong>Critical</strong>,
+      <strong>Hot</strong>, <strong>Concerned</strong>, <strong>Stable</strong>, and <strong>At Risk</strong>.
+      Clicking any card filters the table to show only that subset. Click <strong>Total</strong> or
+      <strong>Clear</strong> to remove the filter.
+    </p>
+
+    <h3>Heat levels</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Label</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-red">Critical</span></td><td>We are at risk of losing them as a customer</td></tr>
+          <tr><td><span class="badge" style="background:rgba(249,115,22,0.15);color:var(--orange);">Hot</span></td><td>They are escalating</td></tr>
+          <tr><td><span class="badge badge-yellow">Concerned</span></td><td>They are complaining</td></tr>
+          <tr><td><span class="badge badge-green">Stable</span></td><td>Stable but needs attention</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Filters</h3>
+    <p>
+      Use the filter bar to search by customer name, SE, AM, or location, and to narrow by temperature,
+      risk level, or account manager. Filters can be combined.
+    </p>
+
+    <h3>Sorting</h3>
+    <p>
+      Click any column header to sort. The Heat column sorts by severity (Critical first), not alphabetically.
+      Click again to reverse the sort. The default order is Critical → Hot → Concerned → Stable, then
+      alphabetically within each group.
+    </p>
+  </section>
+
+  <!-- ── Detail / Edit ── -->
+  <section id="detail-edit">
+    <h2>Detail &amp; Edit</h2>
+
+    <h3>Detail page</h3>
+    <p>
+      Click <strong>Details →</strong> on any row to open the full customer record. All fields are shown
+      read-only, including the Additional Notes section highlighted in blue.
+    </p>
+
+    <h3>Edit page</h3>
+    <p>Click <strong>Edit</strong> on the dashboard row, or the <strong>Edit</strong> button on the detail page. The edit form is divided into two sections:</p>
+    <ul>
+      <li><strong>Read-only fields</strong> — Account Manager, Sales Engineer, Location, Submitted by, Submission date, and Customer Name. These come from the original form submission and cannot be changed.</li>
+      <li><strong>Editable fields</strong> — Customer Temperature, Actively at risk, Risk reasons, Architecture, Near term goals, BU contact, Ask from business unit, Background, and Additional Notes.</li>
+    </ul>
+    <p>Click <strong>Save changes</strong> to commit and return to the dashboard. Click <strong>Support</strong> to open the Support page for this customer. Every save is recorded in the Audit Log.</p>
+  </section>
+
+  <!-- ── Support Page ── -->
+  <section id="support">
+    <h2>Support Page</h2>
+    <p>
+      The Support page is accessed via the <strong>Support</strong> button on the Edit page. It provides
+      a focused view for tracking active engagement with a customer — separate from the core heat and risk
+      fields so that support teams can update their fields without touching the original survey data.
+    </p>
+
+    <h3>Layout</h3>
+    <p>The Support page mirrors the Edit page structure:</p>
+    <ul>
+      <li><strong>Read-only fields</strong> — Account Manager, Sales Engineer, Location, Submitted by, and Submission date (same as the Edit page).</li>
+      <li><strong>Engagement Tracking fields</strong> — the seven manually tracked fields described below.</li>
+    </ul>
+
+    <h3>Engagement Tracking fields</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>State</strong></td><td>Text</td><td>Current engagement state (e.g. Active, On Hold, Resolved)</td></tr>
+          <tr><td><strong>Category</strong></td><td>Text</td><td>Issue category or classification</td></tr>
+          <tr><td><strong>BU PLM Sponsor</strong></td><td>Text</td><td>Business unit Product Line Manager sponsoring this engagement</td></tr>
+          <tr><td><strong>BU TME Sponsor</strong></td><td>Text</td><td>Business unit Technical Marketing Engineer sponsoring this engagement</td></tr>
+          <tr><td><strong>Current Status</strong></td><td>Text</td><td>One-line summary of where things stand right now</td></tr>
+          <tr><td><strong>Next Actions</strong></td><td>Multi-line text</td><td>Action items, owners, and timelines — supports multiple lines</td></tr>
+          <tr><td><strong>Get Well Plan</strong></td><td>Link (URL)</td><td>URL to the external get-well plan document; rendered as a clickable link on the detail page</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-note">
+      <strong>Note:</strong> All seven fields are empty when a customer is first ingested. They are populated manually via the Support page and are never overwritten by re-ingesting the CSV.
+    </div>
+
+    <h3>Saving</h3>
+    <p>
+      Click <strong>Save changes</strong> to commit the engagement fields and return to the customer detail page.
+      The save is recorded in the Audit Log under the action <code>edit_support</code>, including the State and Category values at the time of save.
+      Click <strong>Cancel</strong> or <strong>← Back to edit</strong> to discard changes.
+    </p>
+  </section>
+
+  <!-- ── Engagement Tracker ── -->
+  <section id="engagement">
+    <h2>Engagement Tracker</h2>
+    <p>
+      Available at <strong>Engagement</strong> in the dashboard header. Provides a single table view
+      of all customers alongside their engagement tracking fields, so support teams can see and update
+      every active engagement without navigating to individual customer records.
+    </p>
+
+    <h3>Columns</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Column</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Customer</strong></td><td>Customer account name</td></tr>
+          <tr><td><strong>Heat</strong></td><td>Current heat badge — Critical, Hot, Concerned, or Stable</td></tr>
+          <tr><td><strong>Account Manager</strong></td><td>Assigned account manager from the original form submission</td></tr>
+          <tr><td><strong>State</strong></td><td>Current engagement state</td></tr>
+          <tr><td><strong>Category</strong></td><td>Issue category or classification</td></tr>
+          <tr><td><strong>BU PLM Sponsor</strong></td><td>Business unit Product Line Manager sponsoring the engagement</td></tr>
+          <tr><td><strong>BU TME Sponsor</strong></td><td>Business unit Technical Marketing Engineer sponsoring the engagement</td></tr>
+          <tr><td><strong>Current Status</strong></td><td>One-line summary of where things stand</td></tr>
+          <tr><td><strong>Next Actions</strong></td><td>Action items and timelines — supports multiple lines</td></tr>
+          <tr><td><strong>Get Well Plan</strong></td><td>Clickable link to the external get-well plan document</td></tr>
+          <tr><td><strong>Edit</strong></td><td>Opens the Support page for that customer directly</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Editing from this page</h3>
+    <p>
+      Click the <strong>Edit</strong> button on any row to open the <a href="#support" style="color:var(--accent);">Support page</a>
+      for that customer. After saving, you are returned to the customer detail page.
+      Use the browser back button or the <strong>← Back to edit</strong> link to return to the Engagement Tracker.
+    </p>
+
+    <p>Rows are sorted by heat severity (Critical first) then alphabetically by customer name.</p>
+  </section>
+
+  <!-- ── Executive View ── -->
+  <section id="executive">
+    <h2>Executive View</h2>
+    <p>
+      Available at <strong>Executive View</strong> in the dashboard header. This page provides a
+      summarised view for leadership and QBRs:
+    </p>
+    <ul>
+      <li>Metric summary cards (Total, Critical, Hot, Concerned, Stable, At Risk)</li>
+      <li>Cards for each Critical and Hot customer with their risk status and reasons</li>
+      <li>Sidebar breakdown of top risk reasons (across all at-risk customers)</li>
+      <li>Regional hotspot list (locations with the most Critical/Hot customers)</li>
+      <li>Generation timestamp at the bottom</li>
+    </ul>
+  </section>
+
+  <!-- ── Trend Tracker ── -->
+  <section id="trends">
+    <h2>Trend Tracker</h2>
+    <p>
+      Available at <strong>Trends</strong> in the dashboard header. Shows week-over-week heat movement
+      for every customer — who is getting worse, who is improving, and who is new.
+    </p>
+
+    <h3>Summary cards</h3>
+    <p>Four cards at the top of the page give an instant count:</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Card</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Getting Worse</strong></td><td>Customers whose heat has moved toward Critical since their last snapshot</td></tr>
+          <tr><td><strong>Getting Better</strong></td><td>Customers whose heat has improved toward Stable since their last snapshot</td></tr>
+          <tr><td><strong>New Customers</strong></td><td>Customers with only one heat snapshot — just added to the system</td></tr>
+          <tr><td><strong>No Change</strong></td><td>Customers whose heat level has not moved</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Trend table</h3>
+    <p>
+      The table lists every customer with their previous heat level, current heat level, when the change
+      was recorded, and their AM and SE. Click the filter tabs to narrow to a specific direction.
+      Click <strong>Details →</strong> to go directly to the customer's detail page.
+    </p>
+
+    <h3>Dashboard trend indicators</h3>
+    <p>The main dashboard Heat column also shows inline trend indicators:</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Indicator</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:#ef4444;">↑</strong> (red arrow)</td><td>Customer heat has increased (gotten worse) — hover to see previous level</td></tr>
+          <tr><td><strong style="color:#22c55e;">↓</strong> (green arrow)</td><td>Customer heat has decreased (improved) — hover to see previous level</td></tr>
+          <tr><td><span style="background:rgba(79,156,249,0.12);color:#4f9cf9;border:1px solid rgba(79,156,249,0.3);border-radius:10px;padding:1px 7px;font-size:12px;font-weight:700;">New</span></td><td>Customer was added this cycle and has no prior heat history</td></tr>
+          <tr><td><em>No indicator</em></td><td>Heat level unchanged since last snapshot</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>How snapshots are recorded</h3>
+    <ul>
+      <li><strong>CSV ingest</strong> — a snapshot is recorded for each newly inserted customer.</li>
+      <li><strong>Edit save</strong> — a snapshot is recorded whenever the heat level is changed on the Edit page.</li>
+      <li><strong>Deduplication</strong> — if the heat level has not changed since the last snapshot, no new entry is written. Re-ingesting the same CSV does not create duplicate history.</li>
+    </ul>
+
+    <div class="callout callout-note">
+      <strong>Note:</strong> Trends are based on the two most recent heat snapshots per customer.
+      A customer needs at least two snapshots (i.e., their heat must have changed at least once) to
+      show a directional trend. Brand-new customers show as <strong>New</strong> until their heat changes.
+    </div>
+  </section>
+
+  <!-- ── Stale Records ── -->
+  <section id="stale">
+    <h2>Stale Records</h2>
+    <p>
+      Available at <strong>Stale Records</strong> in the dashboard header. Shows the 20 customers
+      that have gone the longest without any update. Age is calculated from the <code>last_modified</code>
+      field, falling back to the original submission date for records that have never been edited.
+    </p>
+    <p>
+      Rows are colour-coded: records untouched for <strong>30+ days</strong> are highlighted amber;
+      <strong>60+ days</strong> are highlighted red. Use this page during weekly reviews to prompt
+      the team to refresh stale entries.
+    </p>
+  </section>
+
+  <!-- ── Audit Log ── -->
+  <section id="audit">
+    <h2>Audit Log</h2>
+    <p>
+      Available at <strong>Admin → Audit Log</strong>. Every change to the database is recorded with:
+    </p>
+    <ul>
+      <li><strong>Timestamp</strong> — date and time of the action</li>
+      <li><strong>User</strong> — the logged-in account that performed it</li>
+      <li><strong>Action</strong> — what was done (see table below)</li>
+      <li><strong>Target</strong> — the customer name, filename, or username affected</li>
+      <li><strong>Detail</strong> — additional context (e.g., new heat level, record counts)</li>
+    </ul>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Action</th><th>Triggered by</th></tr></thead>
+        <tbody>
+          <tr><td><code>edit customer</code></td><td>Saving changes on the Edit page</td></tr>
+          <tr><td><code>edit support</code></td><td>Saving changes on the Support page (engagement tracking fields)</td></tr>
+          <tr><td><code>upload csv</code></td><td>Admin CSV ingest (includes insert/dup/skip counts)</td></tr>
+          <tr><td><code>export csv</code></td><td>Downloading the CSV export</td></tr>
+          <tr><td><code>backup</code></td><td>Manual or scheduled automatic backup</td></tr>
+          <tr><td><code>restore backup</code></td><td>Restoring from a backup file</td></tr>
+          <tr><td><code>delete db</code></td><td>Database deletion (requires typing DELETE to confirm)</td></tr>
+          <tr><td><code>create user</code></td><td>New user created in User Management</td></tr>
+          <tr><td><code>user enabled / user disabled</code></td><td>Toggle button in User Management</td></tr>
+          <tr><td><code>reset password</code></td><td>Password reset in User Management</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The log displays the 500 most recent entries, newest first.</p>
+  </section>
+
+  <!-- ── Data Model ── -->
+  <section id="data-model">
+    <h2>Data Model</h2>
+    <p>Opal uses a single SQLite file at <code>/data/opal.db</code> (inside the container), mapped to <code>./data/opal.db</code> on the host.</p>
+
+    <h3>customers table</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>INTEGER PK</td><td>Microsoft Forms submission ID — dedup key</td></tr>
+          <tr><td><code>submission_time</code></td><td>TEXT</td><td>Original form submission timestamp</td></tr>
+          <tr><td><code>email</code></td><td>TEXT</td><td>Submitter email</td></tr>
+          <tr><td><code>submitter_name</code></td><td>TEXT</td><td>Submitter display name</td></tr>
+          <tr><td><code>customer_name</code></td><td>TEXT</td><td>Customer account name</td></tr>
+          <tr><td><code>location</code></td><td>TEXT</td><td>Geographic region</td></tr>
+          <tr><td><code>account_manager</code></td><td>TEXT</td><td>AM name</td></tr>
+          <tr><td><code>sales_engineer</code></td><td>TEXT</td><td>SE name</td></tr>
+          <tr><td><code>temperature</code></td><td>TEXT</td><td>Full form value</td></tr>
+          <tr><td><code>temperature_label</code></td><td>TEXT</td><td>Critical / Hot / Concerned / Stable</td></tr>
+          <tr><td><code>temperature_order</code></td><td>INTEGER</td><td>1–4, used for default sort</td></tr>
+          <tr><td><code>at_risk</code></td><td>TEXT</td><td>Yes / No / Not sure (full value)</td></tr>
+          <tr><td><code>risk_reasons</code></td><td>TEXT</td><td>Free text</td></tr>
+          <tr><td><code>architecture</code></td><td>TEXT</td><td>Current deployed architecture</td></tr>
+          <tr><td><code>near_term_goals</code></td><td>TEXT</td><td>Customer goals</td></tr>
+          <tr><td><code>bu_contact</code></td><td>TEXT</td><td>Business unit contact name</td></tr>
+          <tr><td><code>ask_from_bu</code></td><td>TEXT</td><td>What's needed from the BU</td></tr>
+          <tr><td><code>background</code></td><td>TEXT</td><td>Background context</td></tr>
+          <tr><td><code>notes</code></td><td>TEXT</td><td>Additional notes — admin editable</td></tr>
+          <tr><td><code>last_modified</code></td><td>TEXT</td><td>ISO timestamp of last edit; falls back to submission_time</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>users table</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>INTEGER PK</td><td>Auto-increment</td></tr>
+          <tr><td><code>username</code></td><td>TEXT UNIQUE</td><td>Login username</td></tr>
+          <tr><td><code>email</code></td><td>TEXT</td><td>Optional</td></tr>
+          <tr><td><code>password_hash</code></td><td>TEXT</td><td>bcrypt hash — never plaintext</td></tr>
+          <tr><td><code>role</code></td><td>TEXT</td><td><code>admin</code> or <code>user</code></td></tr>
+          <tr><td><code>is_active</code></td><td>INTEGER</td><td>1 = active, 0 = disabled</td></tr>
+          <tr><td><code>must_change_password</code></td><td>INTEGER</td><td>1 = user is forced to change on next login</td></tr>
+          <tr><td><code>created_at</code></td><td>TEXT</td><td>ISO timestamp</td></tr>
+          <tr><td><code>last_login</code></td><td>TEXT</td><td>ISO timestamp of last successful login</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>settings table</h3>
+    <p>Key/value store for application configuration (email SMTP settings, alert toggle).</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>key</code></td><td>TEXT PK</td><td>Setting name (e.g. <code>email_smtp_host</code>)</td></tr>
+          <tr><td><code>value</code></td><td>TEXT</td><td>Setting value</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>audit_log table</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>INTEGER PK</td><td>Auto-increment</td></tr>
+          <tr><td><code>ts</code></td><td>TEXT</td><td>Timestamp — YYYY-MM-DD HH:MM:SS</td></tr>
+          <tr><td><code>username</code></td><td>TEXT</td><td>Who performed the action</td></tr>
+          <tr><td><code>action</code></td><td>TEXT</td><td>Action identifier</td></tr>
+          <tr><td><code>target</code></td><td>TEXT</td><td>Customer name, filename, or username affected</td></tr>
+          <tr><td><code>detail</code></td><td>TEXT</td><td>Additional context</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── Environment Variables ── -->
+  <section id="env-vars">
+    <h2>Environment Variables</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>DB_PATH</code></td><td><code>/data/opal.db</code></td><td>Full path to the SQLite database file inside the container</td></tr>
+          <tr><td><code>BACKUP_DIR</code></td><td><code>/data/backups</code></td><td>Directory where backup files are written</td></tr>
+          <tr><td><code>SECRET_KEY</code></td><td><code>opal-change-me-in-production</code></td><td>HMAC key for signing session cookies. Change this in any non-local deployment.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Set these in the <code>environment:</code> section of <code>docker-compose.yaml</code>.</p>
+  </section>
+
+  <!-- ── File Layout ── -->
+  <section id="file-layout">
+    <h2>File Layout</h2>
+    <pre><code>opal/
+├── app.py                  # FastAPI application — routes, auth, DB logic
+├── ingest.py               # Standalone CSV ingester (used by docker compose run ingest)
+├── requirements.txt        # Python dependencies
+├── Dockerfile              # Container build definition
+├── docker-compose.yaml     # Service definitions
+├── admin-guide.html        # This document
+├── templates/
+│   ├── dashboard.html      # Main customer table
+│   ├── detail.html         # Read-only customer detail
+│   ├── edit.html           # Edit form
+│   ├── executive.html      # Executive overview
+│   ├── stale.html          # Stale records
+│   ├── admin.html          # Admin tools + user management
+│   ├── audit.html          # Audit log
+│   ├── login.html          # Login screen
+│   └── change_password.html
+└── data/                   # Host-mounted volume (created at runtime)
+    ├── opal.db             # SQLite database
+    └── backups/            # Timestamped .db backup files</code></pre>
+  </section>
+
+  <!-- ── Troubleshooting ── -->
+  <section id="troubleshooting">
+    <h2>Troubleshooting</h2>
+
+    <h3>Container won't start</h3>
+    <pre><code>docker compose logs</code></pre>
+    <p>Look for <code>Address already in use</code>. If port 9090 is taken, change the left-hand port in <code>docker-compose.yaml</code>:</p>
+    <pre><code>ports:
+  - "9191:8000"   # change 9090 to any free port</code></pre>
+
+    <h3>Forgot the admin password</h3>
+    <p>
+      If you are locked out, run the following command from the host. It resets the admin password to
+      <code>admin</code> and forces a password change on next login.
+    </p>
+    <div class="callout callout-warning">
+      <strong>Important:</strong> Always run this command <em>inside the container</em> using
+      <code>docker exec</code>. Running it with the host Python will fail silently due to a bcrypt
+      version mismatch — the hash will be written but the password will not work.
+    </div>
+    <pre><code>docker exec opal_opal_1 python3 -c "
+from passlib.context import CryptContext
+import sqlite3
+pwd_ctx = CryptContext(schemes=['bcrypt'], deprecated='auto')
+conn = sqlite3.connect('/data/opal.db')
+conn.execute(\"UPDATE users SET password_hash=?, must_change_password=1 WHERE username='admin'\",
+             (pwd_ctx.hash('admin'),))
+conn.commit()
+conn.close()
+print('Done')
+"</code></pre>
+    <p>Log in with <code>admin</code> / <code>admin</code> — you will be prompted to set a new password immediately.</p>
+
+    <h3>CSV upload produces 0 records inserted</h3>
+    <ul>
+      <li>All rows in the file may already be in the database (duplicate IDs). This is expected when re-ingesting the same export.</li>
+      <li>All rows may have been filtered as Mist rows. Check the <em>Current deployed Architecture</em> column in the CSV.</li>
+      <li>The CSV may be missing the <code>ID</code> column, causing all rows to be treated as ID 0 and colliding on insert.</li>
+    </ul>
+
+    <h3>Database was accidentally deleted</h3>
+    <div class="callout callout-danger">
+      <strong>Act quickly.</strong> If the container is still running, the in-memory scheduler may write a new empty database. Stop the container first.
+    </div>
+    <pre><code>docker compose down
+cp data/backups/opal_backup_&lt;latest&gt;.db data/opal.db
+docker compose up -d</code></pre>
+
+    <h3>Backups are not being created</h3>
+    <p>
+      The scheduler runs inside the container. Verify the container has been up continuously through 6 AM or 6 PM.
+      If the container was restarted just before the scheduled time, it may have missed the window.
+      Use <strong>Admin → Run backup now</strong> to create a manual backup at any time.
+    </p>
+
+    <h3>Test email fails</h3>
+    <p>
+      The error message from the SMTP server is shown in the admin banner. Common causes:
+    </p>
+    <ul>
+      <li><strong>Authentication failed</strong> — double-check username and password. For Office 365, use your full email address as the username.</li>
+      <li><strong>Connection timed out</strong> — the SMTP host or port is wrong, or a firewall is blocking outbound SMTP. Try port 465 if 587 is blocked.</li>
+      <li><strong>Settings incomplete</strong> — host, username, password, and recipient are all required. Save settings before clicking Send test email.</li>
+    </ul>
+    <p>All test email attempts and results are recorded in the Audit Log.</p>
+
+    <h3>Session keeps expiring</h3>
+    <p>
+      Sessions are valid for 8 hours. If you are being logged out sooner, check that the container has not
+      been restarted — a restart with a different <code>SECRET_KEY</code> invalidates all existing sessions.
+      Set a fixed <code>SECRET_KEY</code> in <code>docker-compose.yaml</code> to prevent this.
+    </p>
+  </section>
+
+</main>
+
+<script>
+  // Highlight active nav link on scroll
+  const links = document.querySelectorAll('.nav-link');
+  const sections = document.querySelectorAll('section[id], h2[id]');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

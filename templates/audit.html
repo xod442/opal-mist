@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Log — Opal-Mist</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
+    --text: #e2e8f0; --text2: #94a3b8; --accent: #4f9cf9;
+    --red: #ef4444; --green: #22c55e; --yellow: #eab308; --orange: #f97316;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  header a { color: var(--accent); text-decoration: none; font-size: 13px; }
+  header a:hover { text-decoration: underline; }
+  header h1 { font-size: 18px; font-weight: 700; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  .user-pill {
+    font-size: 12px; color: var(--text2);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 4px 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .user-pill strong { color: var(--text); }
+  .user-pill a { color: var(--text2); font-size: 11px; text-decoration: none; }
+  .user-pill a:hover { color: var(--text); }
+
+  .container { padding: 32px; max-width: 1100px; }
+
+  .table-wrap { border-radius: 10px; border: 1px solid var(--border); overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--surface2); color: var(--text2);
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .ts { font-family: monospace; font-size: 12px; color: var(--text2); white-space: nowrap; }
+  .user { font-weight: 600; color: var(--accent); }
+  .target { color: var(--text); }
+  .detail { color: var(--text2); font-size: 12px; }
+
+  /* Action badge colors */
+  .action-badge {
+    display: inline-block; padding: 2px 9px; border-radius: 10px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .action-edit_customer    { background: rgba(79,156,249,0.12);  color: var(--accent); }
+  .action-edit_support     { background: rgba(168,85,247,0.12);  color: #c084fc; }
+  .action-upload_csv       { background: rgba(34,197,94,0.12);   color: var(--green); }
+  .action-export_csv       { background: rgba(34,197,94,0.08);   color: var(--green); }
+  .action-import_users       { background: rgba(79,156,249,0.08);  color: var(--accent); }
+  .action-import_engagement  { background: rgba(79,156,249,0.08);  color: var(--accent); }
+  .action-backup           { background: rgba(234,179,8,0.12);   color: var(--yellow); }
+  .action-restore_backup   { background: rgba(249,115,22,0.15);  color: var(--orange); }
+  .action-delete_db        { background: rgba(239,68,68,0.15);   color: var(--red); }
+  .action-create_user      { background: rgba(79,156,249,0.12);  color: var(--accent); }
+  .action-user_enabled     { background: rgba(34,197,94,0.12);   color: var(--green); }
+  .action-user_disabled    { background: rgba(239,68,68,0.12);   color: var(--red); }
+  .action-reset_password   { background: rgba(234,179,8,0.12);   color: var(--yellow); }
+
+  .empty { text-align: center; color: var(--text2); padding: 48px; font-style: italic; }
+  .count { color: var(--text2); font-size: 13px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/admin">← Back to admin</a>
+  <h1>Audit Log</h1>
+  <div class="header-right">
+    <div class="user-pill">
+      <span style="color:var(--text2); font-weight:400;">Signed in:</span>
+      <strong>{{ session.username }}</strong>
+      <span style="color:var(--border)">|</span>
+      <a href="/logout">Sign out</a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="count">{{ entries|length }} most recent entr{% if entries|length != 1 %}ies{% else %}y{% endif %}</div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Target</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td class="ts">{{ e.ts }}</td>
+          <td class="user">{{ e.username }}</td>
+          <td>
+            <span class="action-badge action-{{ e.action }}">
+              {{ e.action | replace('_', ' ') }}
+            </span>
+          </td>
+          <td class="target">{{ e.target or '—' }}</td>
+          <td class="detail">{{ e.detail or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="empty">No activity recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>

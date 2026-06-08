@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Account — Opal-Mist</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
+    --text: #e2e8f0; --text2: #94a3b8; --accent: #4f9cf9;
+    --red: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px; line-height: 1.6;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  }
+
+  .login-wrap {
+    width: 100%;
+    max-width: 380px;
+    padding: 24px;
+  }
+
+  .brand {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .brand h1 { font-size: 32px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; }
+  .brand .tagline { font-size: 11px; color: var(--text2); letter-spacing: 0.3px; margin-top: 4px; }
+  .brand .tagline span { color: var(--accent); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+  }
+  .card h2 { font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+  .card .subtitle { font-size: 12px; color: var(--text2); margin-bottom: 20px; }
+
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--accent); }
+
+  .error {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 7px;
+    padding: 10px 14px;
+    color: var(--red);
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .btn-login {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    border-radius: 7px;
+    padding: 11px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: opacity 0.15s;
+  }
+  .btn-login:hover { opacity: 0.85; }
+
+  .back-link {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .back-link a { color: var(--accent); text-decoration: none; }
+  .back-link a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="login-wrap">
+  <div class="brand">
+    <h1>Opal-Mist</h1>
+    <div class="tagline">
+      <span>M</span>ist Customer Risk Dashboard
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Create Account</h2>
+    <p class="subtitle">All fields required. Accounts are created at user level — an admin can grant additional access.</p>
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/register">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" autocomplete="username" autofocus required>
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" autocomplete="email" pattern=".+@hpe\.com" title="Must be an @hpe.com address" placeholder="you@hpe.com" required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" autocomplete="new-password" required>
+      </div>
+      <div class="field">
+        <label for="confirm_password">Confirm Password</label>
+        <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" required>
+      </div>
+      <button class="btn-login" type="submit">Create account</button>
+    </form>
+  </div>
+  <div class="back-link">
+    Already have an account? <a href="/login">Sign in</a>
+  </div>
+</div>
+
+</body>
+</html>

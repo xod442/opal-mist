@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support — {{ c.customer_name }} — Opal-Mist</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
+    --text: #e2e8f0; --text2: #94a3b8; --accent: #4f9cf9;
+    --critical: #ef4444; --hot: #f97316; --concerned: #eab308; --stable: #22c55e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header a { color: var(--accent); text-decoration: none; font-size: 13px; }
+  header a:hover { text-decoration: underline; }
+  header h1 { font-size: 18px; font-weight: 700; }
+
+  .container { padding: 32px; max-width: 860px; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text2);
+    margin: 28px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 6px; }
+
+  .field {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .field.full { grid-column: 1 / -1; }
+  .field .label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .field .value { color: var(--text2); font-size: 14px; }
+
+  .field input[type="text"],
+  .field textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+    resize: vertical;
+  }
+  .field input[type="text"]:focus,
+  .field textarea:focus { border-color: var(--accent); }
+  .field textarea { min-height: 90px; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 8px;
+  }
+  .badge-Critical  { background: rgba(239,68,68,0.15);  color: var(--critical); }
+  .badge-Hot       { background: rgba(249,115,22,0.15); color: var(--hot); }
+  .badge-Concerned { background: rgba(234,179,8,0.15);  color: var(--concerned); }
+  .badge-Stable    { background: rgba(34,197,94,0.15);  color: var(--stable); }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .btn-save {
+    background: var(--accent);
+    border: none;
+    border-radius: 7px;
+    padding: 10px 28px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-save:hover { opacity: 0.85; }
+  .btn-cancel {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 20px;
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.15s;
+  }
+  .btn-cancel:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/customer/{{ c.id }}/edit">← Back to edit</a>
+  <h1>Support — {{ c.customer_name }}</h1>
+  <span class="badge badge-{{ c.temperature_label }}">{{ c.temperature_label }}</span>
+</header>
+
+<div class="container">
+<form method="post" action="/customer/{{ c.id }}/support">
+
+  <!-- Read-only fields -->
+  <div class="section-label">Read-only fields</div>
+  <div class="grid">
+    <div class="field">
+      <span class="label">Account Manager</span>
+      <div class="value">{{ c.account_manager or '—' }}</div>
+    </div>
+    <div class="field">
+      <span class="label">Sales Engineer</span>
+      <div class="value">{{ c.sales_engineer or '—' }}</div>
+    </div>
+    <div class="field">
+      <span class="label">Location</span>
+      <div class="value">{{ c.location or '—' }}</div>
+    </div>
+    <div class="field">
+      <span class="label">Submitted by</span>
+      <div class="value">{{ c.submitter_name or '—' }}</div>
+    </div>
+    <div class="field full">
+      <span class="label">Submission date</span>
+      <div class="value">{{ c.submission_time or '—' }}</div>
+    </div>
+  </div>
+
+  <!-- Engagement Tracking fields -->
+  <div class="section-label">Engagement Tracking</div>
+  <div class="grid">
+
+    <div class="field">
+      <label class="label" for="sales_engineer">Sales Engineer</label>
+      <input type="text" id="sales_engineer" name="sales_engineer" value="{{ c.sales_engineer or '' }}">
+    </div>
+
+    <div class="field">
+      <label class="label" for="state">State</label>
+      <input type="text" id="state" name="state" value="{{ c.state or '' }}">
+    </div>
+
+    <div class="field">
+      <label class="label" for="category">Category</label>
+      <input type="text" id="category" name="category" value="{{ c.category or '' }}">
+    </div>
+
+    <div class="field">
+      <label class="label" for="bu_plm_sponsor">BU PLM Sponsor</label>
+      <input type="text" id="bu_plm_sponsor" name="bu_plm_sponsor" value="{{ c.bu_plm_sponsor or '' }}">
+    </div>
+
+    <div class="field">
+      <label class="label" for="bu_tme_sponsor">BU TME Sponsor</label>
+      <input type="text" id="bu_tme_sponsor" name="bu_tme_sponsor" value="{{ c.bu_tme_sponsor or '' }}">
+    </div>
+
+    <div class="field full">
+      <label class="label" for="current_status">Current Status</label>
+      <input type="text" id="current_status" name="current_status" value="{{ c.current_status or '' }}">
+    </div>
+
+    <div class="field full">
+      <label class="label" for="next_actions">Next Actions</label>
+      <textarea id="next_actions" name="next_actions" style="min-height:120px;">{{ c.next_actions or '' }}</textarea>
+    </div>
+
+    <div class="field full">
+      <label class="label" for="get_well_plan">Get Well Plan</label>
+      <input type="text" id="get_well_plan" name="get_well_plan" placeholder="https://..." value="{{ c.get_well_plan or '' }}">
+    </div>
+
+  </div>
+
+  <div class="actions">
+    <button type="submit" class="btn-save">Save changes</button>
+    <a href="/customer/{{ c.id }}/edit" class="btn-cancel">Cancel</a>
+  </div>
+
+</form>
+</div>
+
+</body>
+</html>

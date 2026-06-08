@@ -1,0 +1,24 @@
+services:
+
+  opal-mist:
+    build: .
+    ports:
+      - "9091:8000"
+    volumes:
+      - ./data:/data
+    environment:
+      DB_PATH: /data/opal-mist.db
+      BACKUP_DIR: /data/backups
+    restart: unless-stopped
+
+  ingest:
+    build: .
+    volumes:
+      - ./data:/data
+      - ./csv:/csv:ro
+    environment:
+      DB_PATH: /data/opal-mist.db
+    entrypoint: ["python3", "ingest.py"]
+    command: ["/csv/engagement.csv"]
+    profiles:
+      - ingest

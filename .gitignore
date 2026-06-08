@@ -1,0 +1,8 @@
+venv/
+opal.db
+*.db
+*.csv
+!example_users.csv
+__pycache__/
+*.pyc
+.DS_Store

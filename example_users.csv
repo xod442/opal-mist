@@ -1,0 +1,4 @@
+username,email,password,role
+jdoe,jdoe@example.com,TempPass1!,user
+sjones,sjones@example.com,TempPass2!,user
+bsmith,bsmith@example.com,TempPass3!,admin

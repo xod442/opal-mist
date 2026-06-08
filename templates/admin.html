@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Opal-Mist</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
+    --text: #e2e8f0; --text2: #94a3b8; --accent: #4f9cf9;
+    --green: #22c55e; --red: #ef4444; --yellow: #eab308;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header a { color: var(--accent); text-decoration: none; font-size: 13px; }
+  header a:hover { text-decoration: underline; }
+  header h1 { font-size: 18px; font-weight: 700; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  .user-pill {
+    font-size: 12px; color: var(--text2);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 4px 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .user-pill strong { color: var(--text); }
+  .user-pill a { color: var(--text2); font-size: 11px; }
+  .user-pill a:hover { color: var(--red); }
+
+  .container { padding: 32px; max-width: 860px; }
+
+  .msg {
+    background: rgba(79,156,249,0.1);
+    border: 1px solid rgba(79,156,249,0.3);
+    border-radius: 8px;
+    padding: 12px 18px;
+    margin-bottom: 24px;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .db-stats {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    flex: 1;
+    text-align: center;
+  }
+  .stat .num { font-size: 28px; font-weight: 800; color: var(--accent); }
+  .stat .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text2); margin-top: 4px; }
+
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+  .section h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .section p {
+    color: var(--text2);
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    border-radius: 7px;
+    padding: 9px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-green   { background: var(--green);  color: #fff; }
+  .btn-red     { background: var(--red);    color: #fff; }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* File upload */
+  .upload-area {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  input[type="file"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: var(--text2);
+    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Delete confirm */
+  .delete-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .delete-row input[type="text"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    width: 160px;
+    outline: none;
+  }
+  .delete-row input[type="text"]:focus { border-color: var(--red); }
+
+  /* Backup table */
+  table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
+  th {
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 9px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .backup-name { font-family: monospace; font-size: 12px; color: var(--text2); }
+  .btn-sm {
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 5px;
+  }
+
+  .warning-text { color: var(--red); font-size: 12px; margin-top: 6px; }
+
+  /* User management */
+  .user-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
+  .user-table th {
+    background: var(--surface2); color: var(--text2);
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .user-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .user-table tr:last-child td { border-bottom: none; }
+  .user-table tr:hover td { background: var(--surface2); }
+  .badge-role {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 2px 8px; border-radius: 10px;
+  }
+  .badge-admin { background: rgba(79,156,249,0.15); color: var(--accent); }
+  .badge-user  { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+  .badge-inactive { background: rgba(239,68,68,0.1); color: var(--red); }
+  .create-user-form {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px;
+    padding-top: 16px; border-top: 1px solid var(--border);
+  }
+  .create-user-form input, .create-user-form select {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 10px; color: var(--text); font-size: 13px; outline: none;
+  }
+  .create-user-form input:focus, .create-user-form select:focus { border-color: var(--accent); }
+  .create-user-form .full { grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/">← Back to dashboard</a>
+  <a href="/admin/audit" style="font-size:13px; color:var(--text2); border:1px solid var(--border); border-radius:6px; padding:5px 14px; text-decoration:none; margin-left:8px;">Audit Log</a>
+  <div>
+    <h1>Opal-Mist — Admin Tools</h1>
+    <div style="font-size:11px; color:var(--text2); letter-spacing:0.3px; margin-top:1px;">
+      <span style="color:var(--accent)">O</span>perational
+      <span style="color:var(--accent)">P</span>riority and
+      <span style="color:var(--accent)">A</span>t-Risk
+      <span style="color:var(--accent)">L</span>ikelihood
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="user-pill">
+      <strong>{{ session.username }}</strong>
+      <span style="color:var(--border)">|</span>
+      <a href="/change-password">Change password</a>
+      <span style="color:var(--border)">|</span>
+      <a href="/logout">Sign out</a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  {% if msg %}
+  <div class="msg">{{ msg }}</div>
+  {% endif %}
+
+  <!-- DB stats -->
+  <div class="db-stats">
+    <div class="stat">
+      <div class="num">{{ record_count }}</div>
+      <div class="lbl">Total records</div>
+    </div>
+    <div class="stat">
+      <div class="num">{{ db_size }}</div>
+      <div class="lbl">Database size</div>
+    </div>
+    <div class="stat">
+      <div class="num">{{ backups|length }}</div>
+      <div class="lbl">Backups stored</div>
+    </div>
+  </div>
+
+  <!-- Manual backup -->
+  <div class="section">
+    <h2>Backup Database</h2>
+    <p>Creates a timestamped copy in the backups folder. Automatic backups run daily at 6 AM and 6 PM.</p>
+    <form method="post" action="/admin/backup">
+      <button class="btn btn-primary" type="submit">Run backup now</button>
+    </form>
+    <h3 style="margin-top:20px; margin-bottom:8px; font-size:14px; font-weight:600;">Secondary Backup Location</h3>
+    <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">
+      If set, every backup is also copied to this path. Use an absolute path accessible inside the container (e.g. a mounted volume or NAS).
+    </p>
+    <form method="post" action="/admin/backup-settings" style="display:flex; gap:10px; align-items:center;">
+      <input type="text" name="backup_dir_2" value="{{ backup_dir_2 }}" placeholder="/mnt/nas/opal-backups" style="flex:1; background:var(--surface2); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:8px 12px; font-size:13px;">
+      <button class="btn btn-primary" type="submit">Save</button>
+    </form>
+  </div>
+
+  <!-- Upload CSV -->
+  <div class="section">
+    <h2>Upload CSV</h2>
+    <p>Upload a new Microsoft Forms CSV export. Only Mist architecture rows are imported — non-Mist rows are skipped. Duplicate entries (by ID) are ignored.</p>
+    <form method="post" action="/admin/upload" enctype="multipart/form-data">
+      <div class="upload-area">
+        <input type="file" name="file" accept=".csv" required>
+        <button class="btn btn-green" type="submit">Upload &amp; ingest</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Upload Engagement CSV -->
+  <div class="section">
+    <h2>Upload Engagement CSV</h2>
+    <p>Upload an engagement tracking CSV export. Records are matched to existing customers by <strong>Customer Name</strong>. Duplicate customer names in the CSV are merged — conflicting field values are concatenated. Rows with no matching customer are skipped and reported.</p>
+    <p style="font-size:12px; color:var(--text2); margin-top:6px;">Expected columns: <code>Customer Name, Sales Engineer, State, Catalog, BU PLM Sponsor, BU PLM TME, Current Status, Next Actions, Get Well Plan Link</code></p>
+    <form method="post" action="/admin/upload-engagement" enctype="multipart/form-data">
+      <div class="upload-area">
+        <input type="file" name="file" accept=".csv" required>
+        <button class="btn btn-green" type="submit">Upload &amp; ingest</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Export CSV -->
+  <div class="section">
+    <h2>Export to CSV</h2>
+    <p>Download the entire database as a CSV file.</p>
+    <a class="btn btn-outline" href="/admin/export">Download CSV</a>
+  </div>
+
+  <!-- Restore from backup -->
+  <div class="section">
+    <h2>Restore from Backup</h2>
+    <p>Restoring will first create a safety backup of the current database, then replace it with the selected backup.</p>
+    {% if backups %}
+    <table>
+      <thead>
+        <tr><th>File</th><th>Size</th><th>Created</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for b in backups %}
+        <tr>
+          <td class="backup-name">{{ b.name }}</td>
+          <td>{{ b.size }}</td>
+          <td>{{ b.modified }}</td>
+          <td>
+            <form method="post" action="/admin/restore/{{ b.name }}"
+                  onsubmit="return confirm('Restore from {{ b.name }}? Current database will be backed up first.')">
+              <button class="btn btn-outline btn-sm" type="submit">Restore</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--text2); font-style:italic;">No backups found. Run a backup first.</p>
+    {% endif %}
+  </div>
+
+  <!-- Email Alerts -->
+  <div class="section">
+    <h2>Email Alerts</h2>
+    <p>Send an email notification when a new Critical customer is ingested via CSV upload. Requires an SMTP server.</p>
+
+    <form method="post" action="/admin/email-settings">
+      <!-- Enable toggle -->
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border);">
+        <label style="font-size:13px; font-weight:600; color:var(--text);">Enable email alerts</label>
+        <label style="position:relative; display:inline-block; width:42px; height:24px;">
+          <input type="checkbox" name="email_alerts_enabled" value="true"
+                 {% if email_cfg.enabled %}checked{% endif %}
+                 style="opacity:0; width:0; height:0;"
+                 onchange="this.form.submit()">
+          <span style="
+            position:absolute; cursor:pointer; inset:0; border-radius:24px;
+            background:{% if email_cfg.enabled %}var(--green){% else %}var(--surface2){% endif %};
+            border:1px solid var(--border); transition:background 0.2s;
+          "></span>
+        </label>
+        <span style="font-size:12px; color:{% if email_cfg.enabled %}var(--green){% else %}var(--text2){% endif %};">
+          {% if email_cfg.enabled %}Alerts enabled{% else %}Alerts disabled{% endif %}
+        </span>
+      </div>
+
+      <!-- SMTP fields -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--text2); margin-bottom:5px;">SMTP Host</label>
+          <input type="text" name="email_smtp_host" value="{{ email_cfg.host }}" placeholder="smtp.office365.com"
+                 style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:8px 10px; color:var(--text); font-size:13px; outline:none;">
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--text2); margin-bottom:5px;">SMTP Port</label>
+          <input type="text" name="email_smtp_port" value="{{ email_cfg.port }}" placeholder="587"
+                 style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:8px 10px; color:var(--text); font-size:13px; outline:none;">
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--text2); margin-bottom:5px;">Username</label>
+          <input type="text" name="email_username" value="{{ email_cfg.username }}" placeholder="you@company.com"
+                 style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:8px 10px; color:var(--text); font-size:13px; outline:none;">
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--text2); margin-bottom:5px;">Password</label>
+          <input type="password" name="email_password" placeholder="Leave blank to keep current"
+                 style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:8px 10px; color:var(--text); font-size:13px; outline:none;">
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--text2); margin-bottom:5px;">From Address</label>
+          <input type="text" name="email_from" value="{{ email_cfg.from_addr }}" placeholder="opal@company.com (optional)"
+                 style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:8px 10px; color:var(--text); font-size:13px; outline:none;">
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--text2); margin-bottom:5px;">Send Alerts To</label>
+          <input type="text" name="email_to" value="{{ email_cfg.to_addr }}" placeholder="team@company.com"
+                 style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:8px 10px; color:var(--text); font-size:13px; outline:none;">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn-primary" type="submit">Save settings</button>
+      </div>
+    </form>
+
+    <!-- Test email (separate form) -->
+    <form method="post" action="/admin/email-test" style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+      <button class="btn btn-outline" type="submit">Send test email</button>
+      <span style="color:var(--text2); font-size:12px; margin-left:10px;">Sends a test message using the settings above. Save first.</span>
+    </form>
+  </div>
+
+  <!-- User Management (admin only) -->
+  <div class="section">
+    <h2>User Management</h2>
+    <p>Create users, reset passwords, or disable accounts. Only admins can access this page.</p>
+    {% if users %}
+    <table class="user-table">
+      <thead>
+        <tr><th>Username</th><th>Role</th><th>Status</th><th>Last Login</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td><strong>{{ u.username }}</strong>{% if u.email %} <span style="color:var(--text2); font-size:12px;">— {{ u.email }}</span>{% endif %}</td>
+          <td><span class="badge-role badge-{{ u.role }}">{{ u.role }}</span></td>
+          <td>
+            {% if u.is_active %}
+              <span style="color:var(--green); font-size:12px;">Active</span>
+            {% else %}
+              <span class="badge-role badge-inactive">Disabled</span>
+            {% endif %}
+            {% if u.must_change_password %}
+              <span style="color:var(--yellow); font-size:11px; margin-left:6px;">⚠ must change pw</span>
+            {% endif %}
+          </td>
+          <td style="color:var(--text2); font-size:12px;">{{ u.last_login or 'Never' }}</td>
+          <td style="white-space:nowrap; display:flex; gap:6px;">
+            {% if u.id != session.user_id %}
+            <form method="post" action="/admin/users/{{ u.id }}/toggle">
+              <button class="btn btn-outline btn-sm" type="submit">
+                {{ 'Disable' if u.is_active else 'Enable' }}
+              </button>
+            </form>
+            {% endif %}
+            <form method="post" action="/admin/users/{{ u.id }}/reset-password"
+                  onsubmit="return confirm('Reset password for {{ u.username }} to a temporary password?')">
+              <button class="btn btn-outline btn-sm" type="submit">Reset pw</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Create new user -->
+    <form method="post" action="/admin/users/create" class="create-user-form">
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="text" name="email" placeholder="Email (optional)">
+      <input type="password" name="password" placeholder="Temporary password" required>
+      <select name="role">
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+      </select>
+      <div class="full">
+        <button class="btn btn-primary" type="submit">Create user</button>
+        <span style="color:var(--text2); font-size:12px; margin-left:10px;">New users must change their password on first login.</span>
+      </div>
+    </form>
+
+    <!-- Bulk import users -->
+    <h3 style="margin-top:28px; margin-bottom:10px; font-size:14px; color:var(--accent);">Bulk Import via CSV</h3>
+    <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">
+      Upload a CSV with columns: <code>username</code>, <code>email</code>, <code>password</code>, <code>role</code>.
+      Existing usernames are skipped. All imported users must change their password on first login.
+      Download <a href="/admin/users/example-csv" style="color:var(--accent);">example_users.csv</a> for the correct format.
+    </p>
+    <form method="post" action="/admin/users/import" enctype="multipart/form-data" style="display:flex; gap:10px; align-items:center;">
+      <input type="file" name="file" accept=".csv" required style="color:var(--text2); font-size:13px;">
+      <button class="btn btn-primary" type="submit">Import users</button>
+    </form>
+  </div>
+
+  <!-- Delete database -->
+  <div class="section">
+    <h2>Delete Database</h2>
+    <p>Permanently deletes the database. This cannot be undone. Run a backup first.</p>
+    <form method="post" action="/admin/delete-db">
+      <div class="delete-row">
+        <input type="text" name="confirm" placeholder='Type "DELETE"' autocomplete="off">
+        <button class="btn btn-red" type="submit">Delete database</button>
+      </div>
+    </form>
+    <p class="warning-text">⚠ This action is irreversible. Make sure you have a backup.</p>
+  </div>
+
+</div>
+</body>
+</html>

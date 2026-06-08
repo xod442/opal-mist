@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engagement Tracker — Opal-Mist</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
+    --text: #e2e8f0; --text2: #94a3b8; --accent: #4f9cf9;
+    --critical: #ef4444; --hot: #f97316; --concerned: #eab308; --stable: #22c55e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
+
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 14px 32px; display: flex; align-items: center; gap: 16px;
+  }
+  header a { color: var(--accent); text-decoration: none; font-size: 13px; }
+  header a:hover { text-decoration: underline; }
+  header h1 { font-size: 18px; font-weight: 700; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  .user-pill {
+    font-size: 12px; color: var(--text2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .user-pill strong { color: var(--text); }
+  .user-pill a { color: var(--text2); font-size: 11px; text-decoration: none; }
+  .user-pill a:hover { color: var(--text); }
+
+  .container { padding: 28px 32px; max-width: 1400px; }
+
+  .table-wrap { border-radius: 10px; border: 1px solid var(--border); overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--surface2); color: var(--text2); font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px; padding: 11px 14px;
+    text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .badge-Critical  { background: rgba(239,68,68,0.15);  color: var(--critical);  border: 1px solid rgba(239,68,68,0.3); }
+  .badge-Hot       { background: rgba(249,115,22,0.15); color: var(--hot);       border: 1px solid rgba(249,115,22,0.3); }
+  .badge-Concerned { background: rgba(234,179,8,0.15);  color: var(--concerned); border: 1px solid rgba(234,179,8,0.3); }
+  .badge-Stable    { background: rgba(34,197,94,0.15);  color: var(--stable);    border: 1px solid rgba(34,197,94,0.3); }
+
+  .cell-wrap { max-width: 220px; white-space: pre-wrap; word-break: break-word; color: var(--text2); font-size: 13px; }
+  .cell-empty { color: var(--border); font-size: 12px; font-style: italic; }
+
+  .btn-edit {
+    display: inline-block; padding: 4px 12px; border-radius: 6px; font-size: 12px;
+    font-weight: 600; text-decoration: none; white-space: nowrap;
+    border: 1px solid rgba(168,85,247,0.4); color: #c084fc;
+    background: rgba(168,85,247,0.08); transition: background 0.15s;
+  }
+  .btn-edit:hover { background: rgba(168,85,247,0.18); text-decoration: none; }
+
+  .empty { text-align: center; color: var(--text2); padding: 48px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/">← Back to dashboard</a>
+  <h1>Engagement Tracker</h1>
+  <div class="header-right">
+    <div class="user-pill">
+      <span style="color:var(--text2); font-weight:400;">Signed in:</span>
+      <strong>{{ session.username }}</strong>
+      <span style="color:var(--border)">|</span>
+      <a href="/change-password">Pwd</a>
+      <span style="color:var(--border)">|</span>
+      <a href="/logout">Sign out</a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Account Manager</th>
+          <th>Sales Engineer</th>
+          <th>State</th>
+          <th>Category</th>
+          <th>BU PLM Sponsor</th>
+          <th>BU TME Sponsor</th>
+          <th>Current Status</th>
+          <th>Next Actions</th>
+          <th>Get Well Plan</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in customers %}
+        <tr>
+          <td><strong>{{ c.customer_name }}</strong></td>
+          <td style="color:var(--text2); font-size:13px;">{{ c.account_manager or '—' }}</td>
+          <td style="color:var(--text2); font-size:13px;">{% if c.sales_engineer %}{{ c.sales_engineer }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
+          <td style="font-size:13px;">{% if c.state %}{{ c.state }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
+          <td style="font-size:13px;">{% if c.category %}{{ c.category }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
+          <td style="font-size:13px;">{% if c.bu_plm_sponsor %}{{ c.bu_plm_sponsor }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
+          <td style="font-size:13px;">{% if c.bu_tme_sponsor %}{{ c.bu_tme_sponsor }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
+          <td style="font-size:13px;">{% if c.current_status %}{{ c.current_status }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
+          <td class="cell-wrap">
+            {% if c.next_actions %}{{ c.next_actions }}{% else %}<span class="cell-empty">—</span>{% endif %}
+          </td>
+          <td style="font-size:13px;">
+            {% if c.get_well_plan %}
+              <a href="{{ c.get_well_plan }}" target="_blank" rel="noopener" style="color:var(--accent);">Link ↗</a>
+            {% else %}
+              <span class="cell-empty">—</span>
+            {% endif %}
+          </td>
+          <td><a class="btn-edit" href="/customer/{{ c.id }}/support">Edit</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="11" class="empty">No customers found. Ingest a CSV to get started.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</body>
+</html>

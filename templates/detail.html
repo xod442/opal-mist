@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ c.customer_name }} — Opal-Mist</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
+    --text: #e2e8f0; --text2: #94a3b8; --accent: #4f9cf9;
+    --critical: #ef4444; --hot: #f97316; --concerned: #eab308; --stable: #22c55e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header a { color: var(--accent); text-decoration: none; font-size: 13px; }
+  header a:hover { text-decoration: underline; }
+  .btn-edit {
+    margin-left: auto;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 16px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .btn-edit:hover { border-color: var(--accent); color: var(--accent); }
+  header h1 { font-size: 18px; font-weight: 700; }
+
+  .container { padding: 32px; max-width: 860px; }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .badge-Critical  { background: rgba(239,68,68,0.15);  color: var(--critical); }
+  .badge-Hot       { background: rgba(249,115,22,0.15); color: var(--hot); }
+  .badge-Concerned { background: rgba(234,179,8,0.15);  color: var(--concerned); }
+  .badge-Stable    { background: rgba(34,197,94,0.15);  color: var(--stable); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+  .field {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .field .label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text2); margin-bottom: 4px; }
+  .field .value { color: var(--text); font-size: 14px; }
+  .field.full { grid-column: 1 / -1; }
+  .field .value.muted { color: var(--text2); font-style: italic; }
+
+  .risk-yes  { color: var(--critical); font-weight: 600; }
+  .risk-no   { color: var(--text2); }
+  .risk-unsure { color: var(--concerned); }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/">← Back to dashboard</a>
+  <h1>{{ c.customer_name }}</h1>
+  <a class="btn-edit" href="/customer/{{ c.id }}/edit">Edit</a>
+</header>
+
+<div class="container">
+
+  <span class="badge badge-{{ c.temperature_label }}">{{ c.temperature_label }}</span>
+
+  <div class="grid">
+    <div class="field">
+      <div class="label">Account Manager</div>
+      <div class="value">{{ c.account_manager or '—' }}</div>
+    </div>
+    <div class="field">
+      <div class="label">Sales Engineer</div>
+      <div class="value">{{ c.sales_engineer or '—' }}</div>
+    </div>
+    <div class="field">
+      <div class="label">Location</div>
+      <div class="value">{{ c.location or '—' }}</div>
+    </div>
+    <div class="field">
+      <div class="label">Submitted by</div>
+      <div class="value">{{ c.submitter_name or '—' }}</div>
+    </div>
+    <div class="field">
+      <div class="label">Actively at risk</div>
+      <div class="value">
+        {% if 'Yes' in c.at_risk %}<span class="risk-yes">{{ c.at_risk }}</span>
+        {% elif 'Not sure' in c.at_risk %}<span class="risk-unsure">{{ c.at_risk }}</span>
+        {% else %}<span class="risk-no">{{ c.at_risk }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="field">
+      <div class="label">Submission date</div>
+      <div class="value">{{ c.submission_time or '—' }}</div>
+    </div>
+
+    <div class="field full">
+      <div class="label">Risk reasons</div>
+      <div class="value {% if not c.risk_reasons %}muted{% endif %}">{{ c.risk_reasons or 'None specified' }}</div>
+    </div>
+    <div class="field full">
+      <div class="label">Current deployed architecture</div>
+      <div class="value {% if not c.architecture %}muted{% endif %}">{{ c.architecture or 'Not specified' }}</div>
+    </div>
+    <div class="field full">
+      <div class="label">Near term goals</div>
+      <div class="value {% if not c.near_term_goals %}muted{% endif %}">{{ c.near_term_goals or 'Not specified' }}</div>
+    </div>
+    <div class="field full">
+      <div class="label">BU contact</div>
+      <div class="value {% if not c.bu_contact %}muted{% endif %}">{{ c.bu_contact or 'None' }}</div>
+    </div>
+    <div class="field full">
+      <div class="label">Ask from business unit</div>
+      <div class="value {% if not c.ask_from_bu %}muted{% endif %}">{{ c.ask_from_bu or 'None specified' }}</div>
+    </div>
+    <div class="field full">
+      <div class="label">Background</div>
+      <div class="value {% if not c.background %}muted{% endif %}">{{ c.background or 'None' }}</div>
+    </div>
+    <div class="field full" style="border-color: rgba(79,156,249,0.3);">
+      <div class="label" style="color:var(--accent)">Additional Notes</div>
+      <div class="value {% if not c.notes %}muted{% endif %}">{{ c.notes or 'No notes added.' }}</div>
+    </div>
+  </div>
+
+  <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text2); margin:8px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--border);">Engagement Tracking</div>
+  <div class="grid">
+    <div class="field">
+      <div class="label">State</div>
+      <div class="value {% if not c.state %}muted{% endif %}">{{ c.state or '—' }}</div>
+    </div>
+    <div class="field">
+      <div class="label">Category</div>
+      <div class="value {% if not c.category %}muted{% endif %}">{{ c.category or '—' }}</div>
+    </div>
+    <div class="field">
+      <div class="label">BU PLM Sponsor</div>
+      <div class="value {% if not c.bu_plm_sponsor %}muted{% endif %}">{{ c.bu_plm_sponsor or '—' }}</div>
+    </div>
+    <div class="field">
+      <div class="label">BU TME Sponsor</div>
+      <div class="value {% if not c.bu_tme_sponsor %}muted{% endif %}">{{ c.bu_tme_sponsor or '—' }}</div>
+    </div>
+    <div class="field full">
+      <div class="label">Current Status</div>
+      <div class="value {% if not c.current_status %}muted{% endif %}">{{ c.current_status or '—' }}</div>
+    </div>
+    <div class="field full">
+      <div class="label">Next Actions</div>
+      <div class="value {% if not c.next_actions %}muted{% endif %}" style="white-space:pre-wrap;">{{ c.next_actions or '—' }}</div>
+    </div>
+    <div class="field full">
+      <div class="label">Get Well Plan</div>
+      <div class="value">
+        {% if c.get_well_plan %}
+          <a href="{{ c.get_well_plan }}" target="_blank" rel="noopener" style="color:var(--accent);">{{ c.get_well_plan }}</a>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

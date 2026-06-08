@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opal-Mist — Customers at Risk</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --critical: #ef4444;
+    --critical-bg: rgba(239,68,68,0.12);
+    --hot: #f97316;
+    --hot-bg: rgba(249,115,22,0.12);
+    --concerned: #eab308;
+    --concerned-bg: rgba(234,179,8,0.12);
+    --stable: #22c55e;
+    --stable-bg: rgba(34,197,94,0.12);
+    --accent: #4f9cf9;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header h1 { font-size: 20px; font-weight: 800; color: var(--accent); letter-spacing: -0.3px; }
+  header .sub { color: var(--text2); font-size: 13px; }
+
+  .container { padding: 28px 32px; }
+
+  /* Metric cards */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    text-align: center;
+  }
+  .card .num { font-size: 36px; font-weight: 800; line-height: 1; }
+  .card .lbl { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text2); margin-top: 6px; }
+  .card.total  .num { color: var(--accent); }
+  .card.critical .num { color: var(--critical); }
+  .card.hot      .num { color: var(--hot); }
+  .card.concerned .num { color: var(--concerned); }
+  .card.stable   .num { color: var(--stable); }
+  .card.atrisk   .num { color: #c084fc; }
+
+  /* Filters */
+  .filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .filters input, .filters select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+  }
+  .filters input { flex: 1; min-width: 200px; }
+  .filters input:focus, .filters select:focus { border-color: var(--accent); }
+  .filters button {
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 18px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .filters a.clear {
+    display: flex;
+    align-items: center;
+    color: var(--text2);
+    font-size: 13px;
+    text-decoration: none;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .filters a.clear:hover { color: var(--text); }
+
+  /* Count */
+  .count { color: var(--text2); font-size: 13px; margin-bottom: 12px; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 11px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  /* Heat badge */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge-Critical  { background: var(--critical-bg);  color: var(--critical);  border: 1px solid rgba(239,68,68,0.3); }
+  .badge-Hot       { background: var(--hot-bg);       color: var(--hot);       border: 1px solid rgba(249,115,22,0.3); }
+  .badge-Concerned { background: var(--concerned-bg); color: var(--concerned); border: 1px solid rgba(234,179,8,0.3); }
+  .badge-Stable    { background: var(--stable-bg);    color: var(--stable);    border: 1px solid rgba(34,197,94,0.3); }
+
+  /* Risk indicator */
+  .risk-yes  { color: var(--critical); font-weight: 600; }
+  .risk-no   { color: var(--text2); }
+  .risk-unsure { color: var(--concerned); }
+
+  /* Row left border by heat */
+  tr.row-Critical td:first-child  { border-left: 3px solid var(--critical); }
+  tr.row-Hot       td:first-child { border-left: 3px solid var(--hot); }
+  tr.row-Concerned td:first-child { border-left: 3px solid var(--concerned); }
+  tr.row-Stable    td:first-child { border-left: 3px solid var(--stable); }
+
+  a.detail-link { color: var(--accent); text-decoration: none; font-weight: 500; }
+  a.detail-link:hover { text-decoration: underline; }
+  a.edit-link { color: var(--text2); text-decoration: none; font-size: 12px; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; }
+  a.edit-link:hover { color: var(--text); border-color: var(--text2); }
+
+  .truncate { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text2); font-size: 12px; }
+
+  /* Clickable metric cards */
+  .card { cursor: pointer; text-decoration: none; display: block; transition: border-color 0.15s, transform 0.1s; }
+  .card:hover { transform: translateY(-2px); }
+  .card.total:hover    { border-color: var(--accent); }
+  .card.critical:hover { border-color: var(--critical); }
+  .card.hot:hover      { border-color: var(--hot); }
+  .card.concerned:hover { border-color: var(--concerned); }
+  .card.stable:hover   { border-color: var(--stable); }
+  .card.atrisk:hover   { border-color: #c084fc; }
+  .card.active { border-width: 2px; }
+  .card.total.active    { border-color: var(--accent); }
+  .card.critical.active { border-color: var(--critical); background: var(--critical-bg); }
+  .card.hot.active      { border-color: var(--hot);      background: var(--hot-bg); }
+  .card.concerned.active { border-color: var(--concerned); background: var(--concerned-bg); }
+  .card.stable.active   { border-color: var(--stable);   background: var(--stable-bg); }
+  .card.atrisk.active   { border-color: #c084fc; background: rgba(192,132,252,0.1); }
+
+  .trend-up   { color: #ef4444; font-size: 13px; font-weight: 800; margin-left: 5px; }
+  .trend-down { color: #22c55e; font-size: 13px; font-weight: 800; margin-left: 5px; }
+  .trend-new  { color: #4f9cf9; font-size: 10px; font-weight: 700; margin-left: 5px;
+                background: rgba(79,156,249,0.12); border: 1px solid rgba(79,156,249,0.3);
+                border-radius: 10px; padding: 1px 6px; }
+
+  /* Sortable headers */
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--text); background: #2a2e45; }
+  th.sortable::after { content: ' ⇕'; font-size: 10px; opacity: 0.35; }
+  th.sort-asc::after  { content: ' ↑'; opacity: 1; color: var(--accent); }
+  th.sort-desc::after { content: ' ↓'; opacity: 1; color: var(--accent); }
+
+  .user-pill {
+    font-size: 12px; color: var(--text2);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 4px 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .user-pill strong { color: var(--text); }
+  .user-pill a { color: var(--text2); font-size: 11px; text-decoration: none; }
+  .user-pill a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Opal-Mist</h1>
+    <div style="font-size:11px; color:var(--text2); letter-spacing:0.3px; margin-top:1px;">
+      <span style="color:var(--accent)">O</span>perational
+      <span style="color:var(--accent)">P</span>riority and
+      <span style="color:var(--accent)">A</span>t-Risk
+      <span style="color:var(--accent)">L</span>ikelihood
+    </div>
+  </div>
+  <div style="margin-left:auto; display:flex; gap:10px; align-items:center;">
+    <a href="/executive" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Executive View</a>
+    <a href="/trends" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Trends</a>
+    <a href="/stale" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Stale Records</a>
+    <a href="/engagement" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Engagement</a>
+    <a href="/admin" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Admin</a>
+    <div class="user-pill">
+      <span style="color:var(--text2); font-weight:400;">Signed in:</span> <strong>{{ session.username }}</strong>
+      <span style="color:var(--border)">|</span>
+      <a href="/change-password">Pwd</a>
+      <span style="color:var(--border)">|</span>
+      <a href="/logout">Sign out</a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Metric Cards -->
+  <div class="metrics">
+    <a class="card total {% if not filter_temp and not filter_risk %}active{% endif %}" href="/">
+      <div class="num">{{ metrics.Total }}</div>
+      <div class="lbl">Total</div>
+    </a>
+    <a class="card critical {% if filter_temp == 'Critical' %}active{% endif %}" href="/?filter_temp=Critical">
+      <div class="num">{{ metrics.Critical }}</div>
+      <div class="lbl">Critical</div>
+    </a>
+    <a class="card hot {% if filter_temp == 'Hot' %}active{% endif %}" href="/?filter_temp=Hot">
+      <div class="num">{{ metrics.Hot }}</div>
+      <div class="lbl">Hot</div>
+    </a>
+    <a class="card concerned {% if filter_temp == 'Concerned' %}active{% endif %}" href="/?filter_temp=Concerned">
+      <div class="num">{{ metrics.Concerned }}</div>
+      <div class="lbl">Concerned</div>
+    </a>
+    <a class="card stable {% if filter_temp == 'Stable' %}active{% endif %}" href="/?filter_temp=Stable">
+      <div class="num">{{ metrics.Stable }}</div>
+      <div class="lbl">Stable</div>
+    </a>
+    <a class="card atrisk {% if filter_risk == 'Yes – actively evaluating other vendors' %}active{% endif %}" href="/?filter_risk=Yes+%E2%80%93+actively+evaluating+other+vendors">
+      <div class="num">{{ metrics['At Risk'] }}</div>
+      <div class="lbl">At Risk</div>
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <form class="filters" method="get">
+    <input type="text" name="search" placeholder="Search customer, SE, AM, location..." value="{{ search }}">
+    <select name="filter_temp">
+      <option value="">All temperatures</option>
+      {% for t in ['Critical','Hot','Concerned','Stable'] %}
+      <option value="{{ t }}" {% if filter_temp == t %}selected{% endif %}>{{ t }}</option>
+      {% endfor %}
+    </select>
+    <select name="filter_risk">
+      <option value="">All risk levels</option>
+      <option value="Yes – actively evaluating other vendors" {% if filter_risk == 'Yes – actively evaluating other vendors' %}selected{% endif %}>Actively at risk</option>
+      <option value="No – unhappy but not leaving" {% if filter_risk == 'No – unhappy but not leaving' %}selected{% endif %}>Unhappy, not leaving</option>
+      <option value="Not sure" {% if filter_risk == 'Not sure' %}selected{% endif %}>Not sure</option>
+    </select>
+    <select name="filter_am">
+      <option value="">All AMs</option>
+      {% for am in ams %}
+      <option value="{{ am }}" {% if filter_am == am %}selected{% endif %}>{{ am }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Filter</button>
+    <a class="clear" href="/">Clear</a>
+  </form>
+
+  <div class="count">{{ customers|length }} customer{% if customers|length != 1 %}s{% endif %}</div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="sortable" data-col="0">Customer</th>
+          <th class="sortable" data-col="1" data-type="heat">Heat</th>
+          <th class="sortable" data-col="2">At Risk</th>
+          <th class="sortable" data-col="3">Location</th>
+          <th class="sortable" data-col="4">Account Manager</th>
+          <th class="sortable" data-col="5">Sales Engineer</th>
+          <th>Risk Reasons</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in customers %}
+        <tr class="row-{{ c.temperature_label }}">
+          <td><strong>{{ c.customer_name }}</strong></td>
+          <td>
+            <span class="badge badge-{{ c.temperature_label }}">{{ c.temperature_label }}</span>
+            {% if trend_map and c.id in trend_map %}
+              {% set t = trend_map[c.id] %}
+              {% if t.direction == 'worse' %}
+                <span class="trend-up" title="Was {{ t.from_label }}">↑</span>
+              {% elif t.direction == 'better' %}
+                <span class="trend-down" title="Was {{ t.from_label }}">↓</span>
+              {% elif t.direction == 'new' %}
+                <span class="trend-new">New</span>
+              {% endif %}
+            {% endif %}
+          </td>
+          <td>
+            {% if 'Yes' in c.at_risk %}
+              <span class="risk-yes">Yes</span>
+            {% elif 'Not sure' in c.at_risk %}
+              <span class="risk-unsure">Not sure</span>
+            {% else %}
+              <span class="risk-no">No</span>
+            {% endif %}
+          </td>
+          <td>{{ c.location }}</td>
+          <td>{{ c.account_manager }}</td>
+          <td>{{ c.sales_engineer }}</td>
+          <td><div class="truncate" title="{{ c.risk_reasons }}">{{ c.risk_reasons }}</div></td>
+          <td style="white-space:nowrap">
+            <a class="detail-link" href="/customer/{{ c.id }}">Details →</a>
+            &nbsp;
+            <a class="edit-link" href="/customer/{{ c.id }}/edit">Edit</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center; color:var(--text2); padding:32px;">No customers match the current filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+  // Heat sort order: Critical=1, Hot=2, Concerned=3, Stable=4
+  const heatOrder = { Critical: 1, Hot: 2, Concerned: 3, Stable: 4 };
+
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const table = th.closest('table');
+      const tbody = table.querySelector('tbody');
+      const col = parseInt(th.dataset.col);
+      const isHeat = th.dataset.type === 'heat';
+      const asc = !th.classList.contains('sort-asc');
+
+      // Reset all headers
+      table.querySelectorAll('th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+      th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.sort((a, b) => {
+        const aCell = a.cells[col];
+        const bCell = b.cells[col];
+        if (!aCell || !bCell) return 0;
+
+        let aVal = aCell.textContent.trim();
+        let bVal = bCell.textContent.trim();
+
+        if (isHeat) {
+          aVal = heatOrder[aVal] || 99;
+          bVal = heatOrder[bVal] || 99;
+          return asc ? aVal - bVal : bVal - aVal;
+        }
+
+        return asc
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal);
+      });
+
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+</script>
+</body>
+</html>
