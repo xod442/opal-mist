@@ -9,7 +9,7 @@
     --bg: #000000; --surface: #425563; --surface2: #80746e; --border: rgba(198,201,202,0.25);
     --text: #e1e1e1; --text2: #c6c9ca; --accent: #2ad2c9;
     --critical: #ff8d6d; --critical-bg: rgba(255,141,109,0.1);
-    --hot: #614767;     --hot-bg: rgba(97,71,103,0.1);
+    --hot: #614767;     --hot-bg: rgba(97,71,103,0.6);
     --concerned: #80746e; --stable: #008567;
     --purple: #c6c9ca;
   }
@@ -111,7 +111,7 @@
     white-space: nowrap;
   }
   .badge-Critical  { background: var(--critical-bg); color: var(--critical); border: 1px solid rgba(255,141,109,0.3); }
-  .badge-Hot       { background: var(--hot-bg);      color: var(--hot);      border: 1px solid rgba(97,71,103,0.3); }
+  .badge-Hot       { background: rgba(97,71,103,0.6);  color: #e1e1e1;          border: 1px solid #614767; }
   .badge-risk-yes  { background: rgba(97,71,103,0.1); color: var(--purple); border: 1px solid rgba(97,71,103,0.3); font-size: 10px; }
   .badge-risk-unsure { background: rgba(128,116,110,0.1); color: var(--concerned); border: 1px solid rgba(128,116,110,0.3); font-size: 10px; }
 
