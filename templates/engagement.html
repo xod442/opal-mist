@@ -54,6 +54,7 @@
   .badge-Happy     { background: rgba(1,169,130,0.15);  color: #01a982;          border: 1px solid rgba(1,169,130,0.3); }
 
   .cell-wrap { max-width: 220px; white-space: pre-wrap; word-break: break-word; color: var(--text2); font-size: 13px; }
+  .cell-clip { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cell-empty { color: var(--border); font-size: 12px; font-style: italic; }
 
   .btn-edit {
@@ -106,20 +107,20 @@
       <tbody>
         {% for c in customers %}
         <tr>
-          <td><strong>{{ c.customer_name }}</strong></td>
-          <td style="color:var(--text2); font-size:13px;">{{ c.account_manager or '—' }}</td>
-          <td style="color:var(--text2); font-size:13px;">{% if c.sales_engineer %}{{ c.sales_engineer }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
-          <td style="font-size:13px;">{% if c.state %}{{ c.state }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
-          <td style="font-size:13px;">{% if c.category %}{{ c.category }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
-          <td style="font-size:13px;">{% if c.bu_plm_sponsor %}{{ c.bu_plm_sponsor }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
-          <td style="font-size:13px;">{% if c.bu_tme_sponsor %}{{ c.bu_tme_sponsor }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
-          <td style="font-size:13px;">{% if c.current_status %}{{ c.current_status }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
+          <td class="cell-clip"><strong>{{ c.customer_name }}</strong></td>
+          <td class="cell-clip" style="color:var(--text2); font-size:13px;">{{ c.account_manager or '—' }}</td>
+          <td class="cell-clip" style="color:var(--text2); font-size:13px;">{% if c.sales_engineer %}{{ c.sales_engineer }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
+          <td class="cell-clip" style="font-size:13px;">{% if c.state %}{{ c.state }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
+          <td class="cell-clip" style="font-size:13px;">{% if c.category %}{{ c.category }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
+          <td class="cell-clip" style="font-size:13px;">{% if c.bu_plm_sponsor %}{{ c.bu_plm_sponsor }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
+          <td class="cell-clip" style="font-size:13px;">{% if c.bu_tme_sponsor %}{{ c.bu_tme_sponsor }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
+          <td class="cell-clip" style="font-size:13px;">{% if c.current_status %}{{ c.current_status }}{% else %}<span class="cell-empty">—</span>{% endif %}</td>
           <td class="cell-wrap">
             {% if c.next_actions %}{{ c.next_actions }}{% else %}<span class="cell-empty">—</span>{% endif %}
           </td>
-          <td style="font-size:13px;">
+          <td class="cell-clip" style="font-size:13px;">
             {% if c.get_well_plan %}
-              <a href="{{ c.get_well_plan }}" target="_blank" rel="noopener" style="color:var(--accent);">Link ↗</a>
+              <span title="{{ c.get_well_plan }}" style="color:var(--text2);">{{ c.get_well_plan }}</span>
             {% else %}
               <span class="cell-empty">—</span>
             {% endif %}
