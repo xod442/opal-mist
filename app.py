@@ -1144,6 +1144,22 @@ def admin_export(request: Request):
     )
 
 
+@app.post("/admin/delete-customers")
+def admin_delete_customers(request: Request, confirm: str = Form("")):
+    session = get_session(request)
+    if not session or session.get("role") != "admin":
+        return RedirectResponse(url="/login", status_code=303)
+    if confirm.strip().upper() != "DELETE":
+        return RedirectResponse(url="/admin?msg=Type+DELETE+to+confirm", status_code=303)
+    conn = get_db()
+    conn.execute("DELETE FROM customers")
+    conn.execute("DELETE FROM heat_history")
+    conn.commit()
+    conn.close()
+    log_action(session["username"], "delete_customers", "", "All customer and engagement data wiped")
+    return RedirectResponse(url="/admin?msg=Customer+data+deleted.+User+accounts+preserved.", status_code=303)
+
+
 @app.post("/admin/delete-db")
 def admin_delete_db(request: Request, confirm: str = Form("")):
     session = get_session(request)

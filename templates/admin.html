@@ -467,10 +467,23 @@
     </form>
   </div>
 
+  <!-- Delete customer data -->
+  <div class="section">
+    <h2>Delete Customer Data</h2>
+    <p>Wipes all customer records and engagement data. User accounts, settings, and audit log are preserved.</p>
+    <form method="post" action="/admin/delete-customers">
+      <div class="delete-row">
+        <input type="text" name="confirm" placeholder='Type "DELETE"' autocomplete="off">
+        <button class="btn btn-red" type="submit">Delete customer data</button>
+      </div>
+    </form>
+    <p class="warning-text">⚠ This action is irreversible. Make sure you have a backup.</p>
+  </div>
+
   <!-- Delete database -->
   <div class="section">
     <h2>Delete Database</h2>
-    <p>Permanently deletes the database. This cannot be undone. Run a backup first.</p>
+    <p>Permanently deletes the entire database including all users and settings. This cannot be undone. Run a backup first.</p>
     <form method="post" action="/admin/delete-db">
       <div class="delete-row">
         <input type="text" name="confirm" placeholder='Type "DELETE"' autocomplete="off">
