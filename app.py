@@ -1144,8 +1144,8 @@ def admin_export(request: Request):
     )
 
 
-@app.post("/admin/delete-customers")
-def admin_delete_customers(request: Request, confirm: str = Form("")):
+@app.post("/admin/delete-db")
+def admin_delete_db(request: Request, confirm: str = Form("")):
     session = get_session(request)
     if not session or session.get("role") != "admin":
         return RedirectResponse(url="/login", status_code=303)
@@ -1156,44 +1156,8 @@ def admin_delete_customers(request: Request, confirm: str = Form("")):
     conn.execute("DELETE FROM heat_history")
     conn.commit()
     conn.close()
-    log_action(session["username"], "delete_customers", "", "All customer and engagement data wiped")
-    return RedirectResponse(url="/admin?msg=Customer+data+deleted.+User+accounts+preserved.", status_code=303)
-
-
-@app.post("/admin/delete-db")
-def admin_delete_db(request: Request, confirm: str = Form("")):
-    session = get_session(request)
-    if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
-    if confirm.strip().upper() != "DELETE":
-        return RedirectResponse(url="/admin?msg=Type+DELETE+to+confirm", status_code=303)
-    # Save all user accounts before wiping
-    conn = get_db()
-    users = conn.execute("SELECT username, email, password_hash, role, is_active, must_change_password, created_at, last_login FROM users").fetchall()
-    settings_rows = conn.execute("SELECT key, value FROM settings").fetchall()
-    conn.close()
-    log_action(session["username"], "delete_db", "opal.db", "Database wiped; users preserved")
-    if os.path.exists(DB_PATH):
-        os.remove(DB_PATH)
-    migrate_db()
-    # Restore users and settings
-    conn = get_db()
-    for u in users:
-        try:
-            conn.execute(
-                "INSERT OR IGNORE INTO users (username, email, password_hash, role, is_active, must_change_password, created_at, last_login) VALUES (?,?,?,?,?,?,?,?)",
-                tuple(u)
-            )
-        except Exception:
-            pass
-    for s in settings_rows:
-        try:
-            conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?,?)", tuple(s))
-        except Exception:
-            pass
-    conn.commit()
-    conn.close()
-    return RedirectResponse(url="/login?msg=Database+wiped.+Your+user+accounts+have+been+preserved.", status_code=303)
+    log_action(session["username"], "delete_db", "", "All customer and engagement data wiped; users and settings preserved")
+    return RedirectResponse(url="/admin?msg=Customer+data+deleted.+Users%2C+logs%2C+and+settings+preserved.", status_code=303)
 
 
 @app.post("/admin/restore/{filename}")

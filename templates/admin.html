@@ -470,24 +470,11 @@
   <!-- Delete customer data -->
   <div class="section">
     <h2>Delete Customer Data</h2>
-    <p>Wipes all customer records and engagement data. User accounts, settings, and audit log are preserved.</p>
-    <form method="post" action="/admin/delete-customers">
-      <div class="delete-row">
-        <input type="text" name="confirm" placeholder='Type "DELETE"' autocomplete="off">
-        <button class="btn btn-red" type="submit">Delete customer data</button>
-      </div>
-    </form>
-    <p class="warning-text">⚠ This action is irreversible. Make sure you have a backup.</p>
-  </div>
-
-  <!-- Delete database -->
-  <div class="section">
-    <h2>Delete Database</h2>
-    <p>Wipes all customer data and resets the database. User accounts and settings are preserved. This cannot be undone. Run a backup first.</p>
+    <p>Wipes all customer records, engagement data, and trend history. User accounts, email settings, and audit log are preserved.</p>
     <form method="post" action="/admin/delete-db">
       <div class="delete-row">
         <input type="text" name="confirm" placeholder='Type "DELETE"' autocomplete="off">
-        <button class="btn btn-red" type="submit">Delete database</button>
+        <button class="btn btn-red" type="submit">Delete customer data</button>
       </div>
     </form>
     <p class="warning-text">⚠ This action is irreversible. Make sure you have a backup.</p>
