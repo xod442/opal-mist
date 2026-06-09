@@ -6,3 +6,4 @@ apscheduler
 passlib[bcrypt]
 bcrypt==4.0.1
 itsdangerous
+aiofiles
