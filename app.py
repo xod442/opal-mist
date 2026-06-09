@@ -136,7 +136,7 @@ def migrate_db():
     if "notes" not in cols:
         conn.execute("ALTER TABLE customers ADD COLUMN notes TEXT")
     for col in ("state", "category", "bu_plm_sponsor", "bu_tme_sponsor",
-                "current_status", "next_actions", "get_well_plan"):
+                "current_status", "next_actions", "get_well_plan", "custodian"):
         if col not in cols:
             conn.execute(f"ALTER TABLE customers ADD COLUMN {col} TEXT")
 
@@ -740,6 +740,7 @@ def edit_save(
     current_status: str = Form(""),
     next_actions: str = Form(""),
     get_well_plan: str = Form(""),
+    custodian: str = Form(""),
 ):
     session = get_session(request)
     if not session:
@@ -751,7 +752,7 @@ def edit_save(
             at_risk=?, risk_reasons=?, architecture=?, near_term_goals=?,
             bu_contact=?, ask_from_bu=?, background=?, notes=?, last_modified=?,
             state=?, category=?, bu_plm_sponsor=?, bu_tme_sponsor=?,
-            current_status=?, next_actions=?, get_well_plan=?
+            current_status=?, next_actions=?, get_well_plan=?, custodian=?
         WHERE id=?
     """, (
         customer_name, temperature,
@@ -761,7 +762,7 @@ def edit_save(
         bu_contact, ask_from_bu, background, notes,
         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         state, category, bu_plm_sponsor, bu_tme_sponsor,
-        current_status, next_actions, get_well_plan,
+        current_status, next_actions, get_well_plan, custodian,
         customer_id,
     ))
     temp_label = TEMP_LABEL.get(temperature, temperature)
@@ -821,6 +822,7 @@ def support_save(
     current_status: str = Form(""),
     next_actions: str = Form(""),
     get_well_plan: str = Form(""),
+    custodian: str = Form(""),
 ):
     session = get_session(request)
     if not session:

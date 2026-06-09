@@ -245,6 +245,11 @@
   <div class="section-label">Engagement Tracking</div>
   <div class="grid">
 
+    <div class="field full">
+      <label class="label" for="custodian">Customer Custodian</label>
+      <input type="text" id="custodian" name="custodian" value="{{ c.custodian or '' }}" placeholder="Name of person responsible for this customer">
+    </div>
+
     <div class="field">
       <label class="label" for="state">State</label>
       <input type="text" id="state" name="state" value="{{ c.state or '' }}">

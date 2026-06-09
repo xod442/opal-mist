@@ -146,6 +146,10 @@
 
   <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text2); margin:8px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--border);">Engagement Tracking</div>
   <div class="grid">
+    <div class="field full">
+      <div class="label">Customer Custodian</div>
+      <div class="value {% if not c.custodian %}muted{% endif %}">{{ c.custodian or '—' }}</div>
+    </div>
     <div class="field">
       <div class="label">State</div>
       <div class="value {% if not c.state %}muted{% endif %}">{{ c.state or '—' }}</div>
