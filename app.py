@@ -1167,11 +1167,33 @@ def admin_delete_db(request: Request, confirm: str = Form("")):
         return RedirectResponse(url="/login", status_code=303)
     if confirm.strip().upper() != "DELETE":
         return RedirectResponse(url="/admin?msg=Type+DELETE+to+confirm", status_code=303)
-    log_action(session["username"], "delete_db", "opal.db", "Database permanently deleted")
+    # Save all user accounts before wiping
+    conn = get_db()
+    users = conn.execute("SELECT username, email, password_hash, role, is_active, must_change_password, created_at, last_login FROM users").fetchall()
+    settings_rows = conn.execute("SELECT key, value FROM settings").fetchall()
+    conn.close()
+    log_action(session["username"], "delete_db", "opal.db", "Database wiped; users preserved")
     if os.path.exists(DB_PATH):
         os.remove(DB_PATH)
     migrate_db()
-    return RedirectResponse(url="/login?msg=Database+deleted.+Please+log+in+again", status_code=303)
+    # Restore users and settings
+    conn = get_db()
+    for u in users:
+        try:
+            conn.execute(
+                "INSERT OR IGNORE INTO users (username, email, password_hash, role, is_active, must_change_password, created_at, last_login) VALUES (?,?,?,?,?,?,?,?)",
+                tuple(u)
+            )
+        except Exception:
+            pass
+    for s in settings_rows:
+        try:
+            conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?,?)", tuple(s))
+        except Exception:
+            pass
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url="/login?msg=Database+wiped.+Your+user+accounts+have+been+preserved.", status_code=303)
 
 
 @app.post("/admin/restore/{filename}")
