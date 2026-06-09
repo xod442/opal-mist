@@ -3,7 +3,7 @@ services:
   opal-mist:
     build: .
     ports:
-      - "9091:8000"
+      - "443:8000"
     volumes:
       - ./data:/data
     environment:
