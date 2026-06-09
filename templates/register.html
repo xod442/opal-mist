@@ -119,7 +119,10 @@
     <form method="post" action="/register">
       <div class="field">
         <label for="username">Username</label>
-        <input type="text" id="username" name="username" autocomplete="username" autofocus required>
+        <input type="email" id="username" name="username" autocomplete="username"
+               pattern=".+@hpe\.com" title="Must be an @hpe.com address"
+               placeholder="you@hpe.com" autofocus required>
+        <div style="font-size:11px; color:var(--text2); margin-top:5px;">Must be a valid @hpe.com email address.</div>
       </div>
       <div class="field">
         <label for="email">Email</label>

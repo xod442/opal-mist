@@ -534,6 +534,9 @@ def register_submit(
     if not username or not password or not email:
         return templates.TemplateResponse(request=request, name="register.html",
                                           context={"error": "Username, email, and password are required."})
+    if not username.lower().endswith("@hpe.com"):
+        return templates.TemplateResponse(request=request, name="register.html",
+                                          context={"error": "Username must be a valid @hpe.com email address."})
     if not email.lower().endswith("@hpe.com"):
         return templates.TemplateResponse(request=request, name="register.html",
                                           context={"error": "Email must be an @hpe.com address."})
