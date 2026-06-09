@@ -35,7 +35,7 @@ Opal-Mist is a direct fork of [Opal](https://github.com/xod442/opal) with one ke
 |---|---|---|
 | Imports | Non-Mist rows | Mist rows only |
 | Skips | Mist rows | Non-Mist rows |
-| Port | 9090 | 9091 |
+| Port | 9090 | 443 |
 | Database | `opal.db` | `opal-mist.db` |
 
 Both can run side by side on the same host.
@@ -45,7 +45,7 @@ Both can run side by side on the same host.
 ## Requirements
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (includes Docker Compose v2)
-- Available port **9091**
+- Available port **443**
 
 No Python or other dependencies needed on the host.
 
@@ -59,7 +59,7 @@ cd opal-mist
 docker compose up -d --build
 ```
 
-Open **http://localhost:9091** in your browser.
+Open **http://<host-ip>** in your browser (port 443 — no port number needed in the URL).
 
 **Default credentials:** `admin` / `admin`
 You will be required to change the password on first login.
@@ -70,7 +70,7 @@ You will be required to change the password on first login.
 
 ### 1. Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
-- Port **9091** available on the host
+- Port **443** available on the host
 
 ### 2. Clone and start
 
@@ -83,11 +83,11 @@ docker compose up -d --build
 The container will:
 - Pull the Python 3.12 base image and install dependencies
 - Create `./data/opal-mist.db` with all tables on first startup
-- Start the web server on port 9091
+- Start the web server on port 443
 
 ### 3. First login
 
-1. Open **http://localhost:9091**
+1. Open **http://localhost** (or **http://<host-ip>** on a VM)
 2. Log in with `admin` / `admin`
 3. You will be redirected to a forced password change — set a strong password and continue
 4. The dashboard will load (empty until a CSV is ingested)
@@ -102,7 +102,7 @@ Upload a Microsoft Forms export via **Admin → Upload CSV**. Only rows where th
 |---|---|
 | `docker compose ps` | `opal-mist` container status **Up** |
 | `docker compose logs` | No errors, `Application startup complete` |
-| http://localhost:9091/login | Login page loads |
+| http://localhost/login | Login page loads |
 | Login with new password | Redirects to dashboard |
 | Admin page | CSV upload, user management, email settings visible |
 
