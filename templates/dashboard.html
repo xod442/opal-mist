@@ -6,23 +6,23 @@
 <title>Opal-Mist — Customers at Risk</title>
 <style>
   :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface2: #22263a;
-    --border: #2e3350;
-    --text: #e2e8f0;
-    --text2: #94a3b8;
-    --critical: #ef4444;
-    --critical-bg: rgba(239,68,68,0.12);
-    --hot: #f97316;
-    --hot-bg: rgba(249,115,22,0.12);
-    --concerned: #eab308;
-    --concerned-bg: rgba(234,179,8,0.12);
-    --stable: #22c55e;
-    --stable-bg: rgba(34,197,94,0.12);
-    --happy: #06b6d4;
-    --happy-bg: rgba(6,182,212,0.12);
-    --accent: #4f9cf9;
+    --bg: #425563;
+    --surface: #5f7a76;
+    --surface2: #80746e;
+    --border: rgba(198,201,202,0.25);
+    --text: #e1e1e1;
+    --text2: #c6c9ca;
+    --critical: #ff8d6d;
+    --critical-bg: rgba(255,141,109,0.12);
+    --hot: #614767;
+    --hot-bg: rgba(97,71,103,0.12);
+    --concerned: #80746e;
+    --concerned-bg: rgba(128,116,110,0.12);
+    --stable: #008567;
+    --stable-bg: rgba(0,133,103,0.12);
+    --happy: #01a982;
+    --happy-bg: rgba(1,169,130,0.12);
+    --accent: #2ad2c9;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; }
@@ -62,7 +62,7 @@
   .card.concerned .num { color: var(--concerned); }
   .card.stable   .num { color: var(--stable); }
   .card.happy    .num { color: var(--happy); }
-  .card.atrisk   .num { color: #c084fc; }
+  .card.atrisk   .num { color: #c6c9ca; }
 
   /* Filters */
   .filters {
@@ -136,11 +136,11 @@
     letter-spacing: 0.3px;
     white-space: nowrap;
   }
-  .badge-Critical  { background: var(--critical-bg);  color: var(--critical);  border: 1px solid rgba(239,68,68,0.3); }
-  .badge-Hot       { background: var(--hot-bg);       color: var(--hot);       border: 1px solid rgba(249,115,22,0.3); }
-  .badge-Concerned { background: var(--concerned-bg); color: var(--concerned); border: 1px solid rgba(234,179,8,0.3); }
-  .badge-Stable    { background: var(--stable-bg);    color: var(--stable);    border: 1px solid rgba(34,197,94,0.3); }
-  .badge-Happy     { background: var(--happy-bg);     color: var(--happy);     border: 1px solid rgba(6,182,212,0.3); }
+  .badge-Critical  { background: var(--critical-bg);  color: var(--critical);  border: 1px solid rgba(255,141,109,0.3); }
+  .badge-Hot       { background: var(--hot-bg);       color: var(--hot);       border: 1px solid rgba(97,71,103,0.3); }
+  .badge-Concerned { background: var(--concerned-bg); color: var(--concerned); border: 1px solid rgba(128,116,110,0.3); }
+  .badge-Stable    { background: var(--stable-bg);    color: var(--stable);    border: 1px solid rgba(0,133,103,0.3); }
+  .badge-Happy     { background: var(--happy-bg);     color: var(--happy);     border: 1px solid rgba(1,169,130,0.3); }
 
   /* Risk indicator */
   .risk-yes  { color: var(--critical); font-weight: 600; }
@@ -170,7 +170,7 @@
   .card.concerned:hover { border-color: var(--concerned); }
   .card.stable:hover   { border-color: var(--stable); }
   .card.happy:hover    { border-color: var(--happy); }
-  .card.atrisk:hover   { border-color: #c084fc; }
+  .card.atrisk:hover   { border-color: #c6c9ca; }
   .card.active { border-width: 2px; }
   .card.total.active    { border-color: var(--accent); }
   .card.critical.active { border-color: var(--critical); background: var(--critical-bg); }
@@ -178,17 +178,17 @@
   .card.concerned.active { border-color: var(--concerned); background: var(--concerned-bg); }
   .card.stable.active   { border-color: var(--stable);   background: var(--stable-bg); }
   .card.happy.active    { border-color: var(--happy);    background: var(--happy-bg); }
-  .card.atrisk.active   { border-color: #c084fc; background: rgba(192,132,252,0.1); }
+  .card.atrisk.active   { border-color: #c6c9ca; background: rgba(97,71,103,0.1); }
 
-  .trend-up   { color: #ef4444; font-size: 13px; font-weight: 800; margin-left: 5px; }
-  .trend-down { color: #22c55e; font-size: 13px; font-weight: 800; margin-left: 5px; }
-  .trend-new  { color: #4f9cf9; font-size: 10px; font-weight: 700; margin-left: 5px;
-                background: rgba(79,156,249,0.12); border: 1px solid rgba(79,156,249,0.3);
+  .trend-up   { color: #ff8d6d; font-size: 13px; font-weight: 800; margin-left: 5px; }
+  .trend-down { color: #008567; font-size: 13px; font-weight: 800; margin-left: 5px; }
+  .trend-new  { color: #2ad2c9; font-size: 10px; font-weight: 700; margin-left: 5px;
+                background: rgba(42,210,201,0.12); border: 1px solid rgba(42,210,201,0.3);
                 border-radius: 10px; padding: 1px 6px; }
 
   /* Sortable headers */
   th.sortable { cursor: pointer; user-select: none; }
-  th.sortable:hover { color: var(--text); background: #2a2e45; }
+  th.sortable:hover { color: var(--text); background: #5f7a76; }
   th.sortable::after { content: ' ⇕'; font-size: 10px; opacity: 0.35; }
   th.sort-asc::after  { content: ' ↑'; opacity: 1; color: var(--accent); }
   th.sort-desc::after { content: ' ↓'; opacity: 1; color: var(--accent); }

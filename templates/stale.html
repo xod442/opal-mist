@@ -6,10 +6,10 @@
 <title>Stale Records — Opal-Mist-Mist</title>
 <style>
   :root {
-    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
-    --text: #e2e8f0; --text2: #94a3b8; --accent: #4f9cf9;
-    --critical: #ef4444; --hot: #f97316; --concerned: #eab308; --stable: #22c55e;
-    --stale-low: #22c55e; --stale-med: #eab308; --stale-high: #f97316; --stale-critical: #ef4444;
+    --bg: #425563; --surface: #5f7a76; --surface2: #80746e; --border: rgba(198,201,202,0.25);
+    --text: #e1e1e1; --text2: #c6c9ca; --accent: #2ad2c9;
+    --critical: #ff8d6d; --hot: #614767; --concerned: #80746e; --stable: #008567;
+    --stale-low: #008567; --stale-med: #80746e; --stale-high: #614767; --stale-critical: #ff8d6d;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
@@ -42,10 +42,10 @@
     font-weight: 700;
     white-space: nowrap;
   }
-  .days-low      { background: rgba(34,197,94,0.12);   color: var(--stale-low);      border: 1px solid rgba(34,197,94,0.3); }
-  .days-med      { background: rgba(234,179,8,0.12);   color: var(--stale-med);      border: 1px solid rgba(234,179,8,0.3); }
-  .days-high     { background: rgba(249,115,22,0.12);  color: var(--stale-high);     border: 1px solid rgba(249,115,22,0.3); }
-  .days-critical { background: rgba(239,68,68,0.12);   color: var(--stale-critical); border: 1px solid rgba(239,68,68,0.3); }
+  .days-low      { background: rgba(0,133,103,0.12);   color: var(--stale-low);      border: 1px solid rgba(0,133,103,0.3); }
+  .days-med      { background: rgba(128,116,110,0.12);   color: var(--stale-med);      border: 1px solid rgba(128,116,110,0.3); }
+  .days-high     { background: rgba(97,71,103,0.12);  color: var(--stale-high);     border: 1px solid rgba(97,71,103,0.3); }
+  .days-critical { background: rgba(255,141,109,0.12);   color: var(--stale-critical); border: 1px solid rgba(255,141,109,0.3); }
 
   .heat-badge {
     display: inline-block;
@@ -54,10 +54,10 @@
     font-size: 11px;
     font-weight: 700;
   }
-  .badge-Critical  { background: rgba(239,68,68,0.12);  color: var(--critical); border: 1px solid rgba(239,68,68,0.3); }
-  .badge-Hot       { background: rgba(249,115,22,0.12); color: var(--hot);      border: 1px solid rgba(249,115,22,0.3); }
-  .badge-Concerned { background: rgba(234,179,8,0.12);  color: var(--concerned);border: 1px solid rgba(234,179,8,0.3); }
-  .badge-Stable    { background: rgba(34,197,94,0.12);  color: var(--stable);   border: 1px solid rgba(34,197,94,0.3); }
+  .badge-Critical  { background: rgba(255,141,109,0.12);  color: var(--critical); border: 1px solid rgba(255,141,109,0.3); }
+  .badge-Hot       { background: rgba(97,71,103,0.12); color: var(--hot);      border: 1px solid rgba(97,71,103,0.3); }
+  .badge-Concerned { background: rgba(128,116,110,0.12);  color: var(--concerned);border: 1px solid rgba(128,116,110,0.3); }
+  .badge-Stable    { background: rgba(0,133,103,0.12);  color: var(--stable);   border: 1px solid rgba(0,133,103,0.3); }
 
   .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
   table { width: 100%; border-collapse: collapse; }
@@ -118,10 +118,10 @@
   <div class="page-sub">Customers ranked by how long it has been since their record was last reviewed or edited.</div>
 
   <div class="legend">
-    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Under 30 days</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#eab308"></div> 30–60 days</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div> 60–90 days</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Over 90 days</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#008567"></div> Under 30 days</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#80746e"></div> 30–60 days</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#614767"></div> 60–90 days</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff8d6d"></div> Over 90 days</div>
   </div>
 
   <div class="table-wrap">
@@ -157,8 +157,8 @@
           </td>
           <td><span class="heat-badge badge-{{ c.temperature_label }}">{{ c.temperature_label }}</span></td>
           <td style="font-size:12px; color:var(--text2);">
-            {% if 'Yes' in c.at_risk %}<span style="color:#ef4444; font-weight:600;">Yes</span>
-            {% elif 'Not sure' in c.at_risk %}<span style="color:#eab308;">Not sure</span>
+            {% if 'Yes' in c.at_risk %}<span style="color:#ff8d6d; font-weight:600;">Yes</span>
+            {% elif 'Not sure' in c.at_risk %}<span style="color:#80746e;">Not sure</span>
             {% else %}No{% endif %}
           </td>
           <td style="font-size:12px; color:var(--text2);">{{ c.last_touched or '—' }}</td>

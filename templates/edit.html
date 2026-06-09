@@ -6,9 +6,9 @@
 <title>Edit {{ c.customer_name }} — Opal-Mist</title>
 <style>
   :root {
-    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
-    --text: #e2e8f0; --text2: #94a3b8; --accent: #4f9cf9;
-    --critical: #ef4444; --hot: #f97316; --concerned: #eab308; --stable: #22c55e;
+    --bg: #425563; --surface: #5f7a76; --surface2: #80746e; --border: rgba(198,201,202,0.25);
+    --text: #e1e1e1; --text2: #c6c9ca; --accent: #2ad2c9;
+    --critical: #ff8d6d; --hot: #614767; --concerned: #80746e; --stable: #008567;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
@@ -127,11 +127,11 @@
     font-weight: 700;
     margin-left: 8px;
   }
-  .badge-Critical  { background: rgba(239,68,68,0.15);  color: var(--critical); }
-  .badge-Hot       { background: rgba(249,115,22,0.15); color: var(--hot); }
-  .badge-Concerned { background: rgba(234,179,8,0.15);  color: var(--concerned); }
-  .badge-Stable    { background: rgba(34,197,94,0.15);  color: var(--stable); }
-  .badge-Happy     { background: rgba(6,182,212,0.15);  color: #06b6d4; }
+  .badge-Critical  { background: rgba(255,141,109,0.15);  color: var(--critical); }
+  .badge-Hot       { background: rgba(97,71,103,0.15); color: var(--hot); }
+  .badge-Concerned { background: rgba(128,116,110,0.15);  color: var(--concerned); }
+  .badge-Stable    { background: rgba(0,133,103,0.15);  color: var(--stable); }
+  .badge-Happy     { background: rgba(1,169,130,0.15);  color: #01a982; }
 </style>
 </head>
 <body>
@@ -232,7 +232,7 @@
       <textarea id="background" name="background">{{ c.background or '' }}</textarea>
     </div>
 
-    <div class="field full" style="border-color: rgba(79,156,249,0.3);">
+    <div class="field full" style="border-color: rgba(42,210,201,0.3);">
       <label class="label" for="notes" style="color:var(--accent)">Additional Notes</label>
       <textarea id="notes" name="notes" style="min-height:120px;">{{ c.notes or '' }}</textarea>
     </div>
@@ -282,7 +282,7 @@
 
   <div class="actions">
     <button type="submit" class="btn-save">Save changes</button>
-    <a href="/customer/{{ c.id }}/support" class="btn-cancel" style="border-color:rgba(79,156,249,0.4); color:var(--accent);">Support</a>
+    <a href="/customer/{{ c.id }}/support" class="btn-cancel" style="border-color:rgba(42,210,201,0.4); color:var(--accent);">Support</a>
     <a href="/customer/{{ c.id }}" class="btn-cancel">Cancel</a>
   </div>
 

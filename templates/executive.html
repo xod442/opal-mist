@@ -6,12 +6,12 @@
 <title>Executive Overview — Opal-Mist-Mist</title>
 <style>
   :root {
-    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3350;
-    --text: #e2e8f0; --text2: #94a3b8; --accent: #4f9cf9;
-    --critical: #ef4444; --critical-bg: rgba(239,68,68,0.1);
-    --hot: #f97316;     --hot-bg: rgba(249,115,22,0.1);
-    --concerned: #eab308; --stable: #22c55e;
-    --purple: #c084fc;
+    --bg: #425563; --surface: #5f7a76; --surface2: #80746e; --border: rgba(198,201,202,0.25);
+    --text: #e1e1e1; --text2: #c6c9ca; --accent: #2ad2c9;
+    --critical: #ff8d6d; --critical-bg: rgba(255,141,109,0.1);
+    --hot: #614767;     --hot-bg: rgba(97,71,103,0.1);
+    --concerned: #80746e; --stable: #008567;
+    --purple: #c6c9ca;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
@@ -109,10 +109,10 @@
     font-weight: 700;
     white-space: nowrap;
   }
-  .badge-Critical  { background: var(--critical-bg); color: var(--critical); border: 1px solid rgba(239,68,68,0.3); }
-  .badge-Hot       { background: var(--hot-bg);      color: var(--hot);      border: 1px solid rgba(249,115,22,0.3); }
-  .badge-risk-yes  { background: rgba(192,132,252,0.1); color: var(--purple); border: 1px solid rgba(192,132,252,0.3); font-size: 10px; }
-  .badge-risk-unsure { background: rgba(234,179,8,0.1); color: var(--concerned); border: 1px solid rgba(234,179,8,0.3); font-size: 10px; }
+  .badge-Critical  { background: var(--critical-bg); color: var(--critical); border: 1px solid rgba(255,141,109,0.3); }
+  .badge-Hot       { background: var(--hot-bg);      color: var(--hot);      border: 1px solid rgba(97,71,103,0.3); }
+  .badge-risk-yes  { background: rgba(97,71,103,0.1); color: var(--purple); border: 1px solid rgba(97,71,103,0.3); font-size: 10px; }
+  .badge-risk-unsure { background: rgba(128,116,110,0.1); color: var(--concerned); border: 1px solid rgba(128,116,110,0.3); font-size: 10px; }
 
   .detail-link { font-size: 11px; color: var(--accent); text-decoration: none; }
   .detail-link:hover { text-decoration: underline; }
