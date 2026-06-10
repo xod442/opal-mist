@@ -199,6 +199,14 @@ def migrate_db():
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_heat_history_customer ON heat_history(customer_id)")
 
+    # Fix records ingested with the old 'loosing' typo before it was aliased
+    conn.execute("""
+        UPDATE customers
+        SET temperature_label = 'Critical', temperature_order = 1
+        WHERE temperature LIKE '%loosing%'
+          AND temperature_label != 'Critical'
+    """)
+
     conn.commit()
     conn.close()
 
