@@ -303,6 +303,7 @@
     <h2>Restore from Backup</h2>
     <p>Restoring will first create a safety backup of the current database, then replace it with the selected backup.</p>
     {% if backups %}
+    <div style="max-height:260px; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
     <table>
       <thead>
         <tr><th>File</th><th>Size</th><th>Created</th><th></th></tr>
@@ -323,6 +324,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
     {% else %}
     <p style="color:var(--text2); font-style:italic;">No backups found. Run a backup first.</p>
     {% endif %}
@@ -404,6 +406,7 @@
     <h2>User Management</h2>
     <p>Create users, reset passwords, or disable accounts. Only admins can access this page.</p>
     {% if users %}
+    <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; margin-bottom:20px;">
     <table class="user-table">
       <thead>
         <tr><th>Username</th><th>Role</th><th>Status</th><th>Last Login</th><th>Actions</th></tr>
@@ -441,6 +444,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
     {% endif %}
 
     <!-- Create new user -->
