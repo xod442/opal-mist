@@ -1125,6 +1125,8 @@ def admin_export(request: Request):
         "Temperature", "Heat Level", "At Risk", "Risk Reasons",
         "Architecture", "Near Term Goals", "BU Contact", "Ask from BU",
         "Background", "Notes", "Last Modified",
+        "Custodian", "State", "Category", "BU PLM Sponsor", "BU TME Sponsor",
+        "Current Status", "Next Actions", "Get Well Plan",
     ])
     for r in rows:
         writer.writerow([
@@ -1133,6 +1135,8 @@ def admin_export(request: Request):
             r["temperature"], r["temperature_label"], r["at_risk"], r["risk_reasons"],
             r["architecture"], r["near_term_goals"], r["bu_contact"],
             r["ask_from_bu"], r["background"], r["notes"], r["last_modified"],
+            r["custodian"], r["state"], r["category"], r["bu_plm_sponsor"], r["bu_tme_sponsor"],
+            r["current_status"], r["next_actions"], r["get_well_plan"],
         ])
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_action(session["username"], "export_csv", f"opal_export_{ts}.csv",
