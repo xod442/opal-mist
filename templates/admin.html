@@ -203,6 +203,7 @@
   <img src="/static/hpelogo.png" alt="HPE">
   <a href="/">← Back to dashboard</a>
   <a href="/admin/audit" style="font-size:13px; color:var(--text2); border:1px solid var(--border); border-radius:6px; padding:5px 14px; text-decoration:none; margin-left:8px;">Audit Log</a>
+  <a href="/docs" target="_blank" rel="noopener" style="font-size:13px; color:var(--accent); border:1px solid rgba(42,210,201,0.35); border-radius:6px; padding:5px 14px; text-decoration:none; margin-left:4px;">API ↗</a>
   <div>
     <h1>Opal-Mist — Admin Tools</h1>
     <div style="font-size:11px; color:var(--text2); letter-spacing:0.3px; margin-top:1px;">
@@ -225,6 +226,9 @@
 
 <div class="container">
 
+  {% if flash_pw %}
+  <div class="msg" style="border-color:rgba(255,141,109,0.4); background:rgba(255,141,109,0.08); color:#ff8d6d;">{{ flash_pw }}</div>
+  {% endif %}
   {% if msg %}
   <div class="msg">{{ msg }}</div>
   {% endif %}
@@ -465,6 +469,13 @@
       <input type="file" name="file" accept=".csv" required style="color:var(--text2); font-size:13px;">
       <button class="btn btn-primary" type="submit">Import users</button>
     </form>
+  </div>
+
+  <!-- DB Maintenance -->
+  <div class="section">
+    <h2>DB Maintenance</h2>
+    <p>View, edit, or delete individual customer records. Each delete removes all data for that customer including engagement history and trend data.</p>
+    <a class="btn btn-outline" href="/admin/db-maintenance">Open DB Maintenance</a>
   </div>
 
   <!-- Delete customer data -->

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DB Maintenance — Opal-Central</title>
+<style>
+  :root {
+    --bg: #000000; --surface: #425563; --surface2: #80746e; --border: rgba(198,201,202,0.25);
+    --text: #e1e1e1; --text2: #c6c9ca; --accent: #2ad2c9;
+    --critical: #ff8d6d; --hot: #614767; --concerned: #80746e; --stable: #008567;
+    --green: #008567; --red: #ff8d6d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
+
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 14px 32px; display: flex; align-items: center; gap: 16px;
+  }
+  header img { height: 36px; flex-shrink: 0; }
+  header a { color: var(--accent); text-decoration: none; font-size: 13px; }
+  header a:hover { text-decoration: underline; }
+  header h1 { font-size: 18px; font-weight: 700; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  .user-pill {
+    font-size: 12px; color: var(--text2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .user-pill strong { color: var(--text); }
+  .user-pill a { color: var(--text2); font-size: 11px; text-decoration: none; }
+  .user-pill a:hover { color: var(--text); }
+
+  .container { padding: 28px 32px; max-width: 1400px; }
+
+  .toolbar {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+  }
+  .toolbar input[type="text"] {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 7px;
+    padding: 8px 14px; color: var(--text); font-size: 13px; width: 280px; outline: none;
+    transition: border-color 0.15s;
+  }
+  .toolbar input[type="text"]:focus { border-color: var(--accent); }
+  .record-count { font-size: 13px; color: var(--text2); margin-left: auto; }
+
+  .msg {
+    background: rgba(42,210,201,0.1); border: 1px solid rgba(42,210,201,0.3);
+    border-radius: 8px; padding: 10px 16px; margin-bottom: 20px;
+    color: var(--accent); font-size: 13px; font-weight: 500;
+  }
+  .msg-warn {
+    background: rgba(255,141,109,0.08); border: 1px solid rgba(255,141,109,0.3);
+    border-radius: 8px; padding: 10px 16px; margin-bottom: 20px;
+    color: var(--red); font-size: 13px; font-weight: 500;
+  }
+
+  .table-wrap { border-radius: 10px; border: 1px solid var(--border); overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--surface2); color: var(--text2); font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px; padding: 11px 14px;
+    text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--text); }
+  th.sort-asc::after  { content: ' ▲'; color: var(--accent); font-size: 10px; }
+  th.sort-desc::after { content: ' ▼'; color: var(--accent); font-size: 10px; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(66,85,99,0.4); }
+  tr.hidden { display: none; }
+
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .badge-Critical  { background: rgba(255,141,109,0.15); color: var(--critical); border: 1px solid rgba(255,141,109,0.3); }
+  .badge-Hot       { background: rgba(97,71,103,0.6);    color: #e1e1e1;         border: 1px solid #614767; }
+  .badge-Concerned { background: rgba(128,116,110,0.15); color: var(--concerned);border: 1px solid rgba(128,116,110,0.3); }
+  .badge-Stable    { background: rgba(0,133,103,0.15);   color: var(--stable);   border: 1px solid rgba(0,133,103,0.3); }
+  .badge-Happy     { background: rgba(1,169,130,0.15);   color: #01a982;         border: 1px solid rgba(1,169,130,0.3); }
+
+  .cell-clip { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .btn-edit {
+    display: inline-block; padding: 4px 12px; border-radius: 6px; font-size: 12px;
+    font-weight: 600; text-decoration: none; white-space: nowrap;
+    border: 1px solid var(--border); color: var(--text2);
+    background: rgba(66,85,99,0.3); transition: background 0.15s;
+  }
+  .btn-edit:hover { background: rgba(66,85,99,0.6); color: var(--text); }
+
+  .btn-delete {
+    display: inline-block; padding: 4px 12px; border-radius: 6px; font-size: 12px;
+    font-weight: 600; white-space: nowrap; cursor: pointer;
+    border: 1px solid rgba(255,141,109,0.35); color: var(--red);
+    background: rgba(255,141,109,0.06); transition: background 0.15s;
+  }
+  .btn-delete:hover { background: rgba(255,141,109,0.15); }
+
+  .actions { display: flex; gap: 6px; align-items: center; }
+
+  .empty { text-align: center; color: var(--text2); padding: 48px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="/static/hpelogo.png" alt="HPE">
+  <a href="/admin">← Back to Admin</a>
+  <h1>DB Maintenance</h1>
+  <div class="header-right">
+    <div class="user-pill">
+      <span style="color:var(--text2); font-weight:400;">Signed in:</span>
+      <strong>{{ session.username }}</strong>
+      <span style="color:var(--border)">|</span>
+      <a href="/logout">Sign out</a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  {% if msg %}
+  <div class="{% if 'deleted' in msg.lower() %}msg-warn{% else %}msg{% endif %}">{{ msg }}</div>
+  {% endif %}
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Search by customer name, AM, or SE…" oninput="filterRows(this.value)">
+    <span class="record-count" id="count">{{ customers|length }} records</span>
+  </div>
+
+  <div class="table-wrap">
+    <table id="maintable">
+      <thead>
+        <tr>
+          <th class="sortable" onclick="sortTable(0)">Customer</th>
+          <th class="sortable" onclick="sortTable(1)">Heat</th>
+          <th class="sortable" onclick="sortTable(2)">Account Manager</th>
+          <th class="sortable" onclick="sortTable(3)">Sales Engineer</th>
+          <th class="sortable" onclick="sortTable(4)">Location</th>
+          <th class="sortable" onclick="sortTable(5)">Last Modified</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in customers %}
+        <tr data-search="{{ (c.customer_name ~ ' ' ~ (c.account_manager or '') ~ ' ' ~ (c.sales_engineer or ''))|lower }}">
+          <td class="cell-clip"><strong>{{ c.customer_name }}</strong></td>
+          <td data-sort="{{ c.temperature_order }}"><span class="badge badge-{{ c.temperature_label }}">{{ c.temperature_label }}</span></td>
+          <td class="cell-clip" style="color:var(--text2); font-size:13px;">{{ c.account_manager or '—' }}</td>
+          <td class="cell-clip" style="color:var(--text2); font-size:13px;">{{ c.sales_engineer or '—' }}</td>
+          <td class="cell-clip" style="color:var(--text2); font-size:13px;">{{ c.location or '—' }}</td>
+          <td style="color:var(--text2); font-size:12px; white-space:nowrap;">{{ c.last_modified or c.submission_time or '—' }}</td>
+          <td>
+            <div class="actions">
+              <a class="btn-edit" href="/customer/{{ c.id }}/edit">Edit</a>
+              <form method="post" action="/admin/db-maintenance/delete/{{ c.id }}"
+                    onsubmit="return confirm('Delete {{ c.customer_name }}?\n\nThis will permanently remove all customer data, engagement records, and trend history for this customer. This cannot be undone.')">
+                <button class="btn-delete" type="submit">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="empty">No customer records found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+let sortCol = -1, sortAsc = true;
+
+function filterRows(term) {
+  const rows = document.querySelectorAll('#maintable tbody tr[data-search]');
+  const t = term.toLowerCase().trim();
+  let visible = 0;
+  rows.forEach(row => {
+    const match = !t || row.dataset.search.includes(t);
+    row.classList.toggle('hidden', !match);
+    if (match) visible++;
+  });
+  document.getElementById('count').textContent = visible + ' record' + (visible !== 1 ? 's' : '');
+}
+
+function sortTable(col) {
+  const table = document.getElementById('maintable');
+  const ths = table.querySelectorAll('th');
+  const tbody = table.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr[data-search]'));
+
+  if (sortCol === col) {
+    sortAsc = !sortAsc;
+  } else {
+    sortCol = col;
+    sortAsc = true;
+  }
+
+  ths.forEach((th, i) => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (i === col) th.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+  });
+
+  rows.sort((a, b) => {
+    const aCell = a.querySelectorAll('td')[col];
+    const bCell = b.querySelectorAll('td')[col];
+    const aVal = aCell.dataset.sort ?? aCell.textContent.trim().toLowerCase();
+    const bVal = bCell.dataset.sort ?? bCell.textContent.trim().toLowerCase();
+    const aNum = parseFloat(aVal), bNum = parseFloat(bVal);
+    let cmp = (!isNaN(aNum) && !isNaN(bNum)) ? aNum - bNum : aVal.localeCompare(bVal);
+    return sortAsc ? cmp : -cmp;
+  });
+
+  rows.forEach(row => tbody.appendChild(row));
+}
+</script>
+
+</body>
+</html>

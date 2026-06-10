@@ -159,8 +159,8 @@
           </td>
           <td><span class="heat-badge badge-{{ c.temperature_label }}">{{ c.temperature_label }}</span></td>
           <td style="font-size:12px; color:var(--text2);">
-            {% if 'Yes' in c.at_risk %}<span style="color:#ff8d6d; font-weight:600;">Yes</span>
-            {% elif 'Not sure' in c.at_risk %}<span style="color:#80746e;">Not sure</span>
+            {% if c.at_risk and 'Yes' in c.at_risk %}<span style="color:#ff8d6d; font-weight:600;">Yes</span>
+            {% elif c.at_risk and 'Not sure' in c.at_risk %}<span style="color:#80746e;">Not sure</span>
             {% else %}No{% endif %}
           </td>
           <td style="font-size:12px; color:var(--text2);">{{ c.last_touched or '—' }}</td>

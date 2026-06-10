@@ -19,14 +19,14 @@ DB_PATH = os.getenv("DB_PATH", os.path.join(os.path.dirname(__file__), "opal.db"
 ARCH_COL = "Current deployed Architecture - Not what they want to get to, but what are they running now"
 
 TEMP_ORDER = {
-    "Critical - We are at risk of loosing them as a customer": 1,
+    "Critical - We are at risk of losing them as a customer": 1,
     "Hot - they are escalating": 2,
     "Concerned - they are complaining": 3,
     "Stable - but needs attention": 4,
 }
 
 TEMP_LABEL = {
-    "Critical - We are at risk of loosing them as a customer": "Critical",
+    "Critical - We are at risk of losing them as a customer": "Critical",
     "Hot - they are escalating": "Hot",
     "Concerned - they are complaining": "Concerned",
     "Stable - but needs attention": "Stable",

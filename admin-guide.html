@@ -294,6 +294,7 @@
   <a class="nav-link" href="#audit">Audit Log</a>
 
   <div class="nav-section">Reference</div>
+  <a class="nav-link" href="#api">API Reference</a>
   <a class="nav-link" href="#data-model">Data Model</a>
   <a class="nav-link" href="#env-vars">Environment Variables</a>
   <a class="nav-link" href="#file-layout">File Layout</a>
@@ -1102,6 +1103,68 @@ bsmith,bsmith@example.com,TempPass3!,admin</code></pre>
     </div>
 
     <p>The log displays the 500 most recent entries, newest first.</p>
+  </section>
+
+  <!-- ── API Reference ── -->
+  <section id="api">
+    <h2>API Reference</h2>
+    <p>
+      Opal-Mist is built on <strong>FastAPI</strong>, which automatically generates interactive API documentation
+      from the application's route definitions. No separate API server is required — the same container that
+      serves the dashboard also serves the API docs.
+    </p>
+
+    <h3>Accessing the API docs</h3>
+    <p>The <strong>API</strong> button on the Admin page opens the Swagger UI in a new tab. You can also navigate directly:</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Interface</th><th>URL</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Swagger UI</strong></td><td><code>/docs</code></td><td>Interactive — explore and execute requests directly in the browser</td></tr>
+          <tr><td><strong>ReDoc</strong></td><td><code>/redoc</code></td><td>Read-only reference documentation with clean formatting</td></tr>
+          <tr><td><strong>OpenAPI JSON</strong></td><td><code>/openapi.json</code></td><td>Machine-readable schema for integration with Postman, code generators, or other tooling</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Authentication</h3>
+    <p>
+      All application routes require an active session. The Swagger UI works in the browser as long as you are
+      already logged in — session cookies are sent automatically with each request.
+    </p>
+    <p>For programmatic access (scripts, Postman, etc.):</p>
+    <ol style="margin:10px 0 10px 20px; line-height:2;">
+      <li>Send a <code>POST /login</code> request with form fields <code>username</code> and <code>password</code></li>
+      <li>Capture the <code>session</code> cookie from the response</li>
+      <li>Include that cookie in all subsequent requests</li>
+    </ol>
+    <pre><code>curl -c cookies.txt -X POST http://localhost:443/login \
+  -d "username=admin&password=yourpassword"
+
+curl -b cookies.txt http://localhost:443/admin/export</code></pre>
+
+    <h3>Key endpoints</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td><code>/</code></td><td>Main dashboard</td></tr>
+          <tr><td><code>GET</code></td><td><code>/customer/{id}</code></td><td>Customer detail</td></tr>
+          <tr><td><code>POST</code></td><td><code>/customer/{id}/edit</code></td><td>Save customer edits</td></tr>
+          <tr><td><code>GET</code></td><td><code>/admin/export</code></td><td>Download full database as CSV</td></tr>
+          <tr><td><code>POST</code></td><td><code>/admin/upload</code></td><td>Ingest a Microsoft Forms CSV</td></tr>
+          <tr><td><code>POST</code></td><td><code>/admin/backup</code></td><td>Trigger a manual backup</td></tr>
+          <tr><td><code>GET</code></td><td><code>/admin/audit</code></td><td>View the audit log</td></tr>
+          <tr><td>—</td><td><code>/docs</code></td><td>Full route list with schemas (Swagger UI)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warning">
+      <strong>Note:</strong> The API does not currently implement token-based authentication (OAuth2/Bearer).
+      All access is session-cookie based. Do not expose the <code>/docs</code> endpoint on a public network
+      without additional access controls.
+    </div>
   </section>
 
   <!-- ── Data Model ── -->

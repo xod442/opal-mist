@@ -222,7 +222,7 @@
     <a href="/trends" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Trends</a>
     <a href="/stale" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Stale Records</a>
     <a href="/engagement" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Engagement</a>
-    <a href="/admin" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Admin</a>
+    {% if session.role == 'admin' %}<a href="/admin" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Admin</a>{% endif %}
     <div class="user-pill">
       <span style="color:var(--text2); font-weight:400;">Signed in:</span> <strong>{{ session.username }}</strong>
       <span style="color:var(--border)">|</span>
@@ -327,9 +327,9 @@
             {% endif %}
           </td>
           <td>
-            {% if 'Yes' in c.at_risk %}
+            {% if c.at_risk and 'Yes' in c.at_risk %}
               <span class="risk-yes">Yes</span>
-            {% elif 'Not sure' in c.at_risk %}
+            {% elif c.at_risk and 'Not sure' in c.at_risk %}
               <span class="risk-unsure">Not sure</span>
             {% else %}
               <span class="risk-no">No</span>

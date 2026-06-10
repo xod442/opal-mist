@@ -38,14 +38,14 @@ pwd_ctx    = CryptContext(schemes=["bcrypt"], deprecated="auto")
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 
 TEMP_ORDER = {
-    "Critical - We are at risk of loosing them as a customer": 1,
+    "Critical - We are at risk of losing them as a customer": 1,
     "Hot - they are escalating": 2,
     "Concerned - they are complaining": 3,
     "Stable - but needs attention": 4,
     "Happy - customer is satisfied": 5,
 }
 TEMP_LABEL = {
-    "Critical - We are at risk of loosing them as a customer": "Critical",
+    "Critical - We are at risk of losing them as a customer": "Critical",
     "Hot - they are escalating": "Hot",
     "Concerned - they are complaining": "Concerned",
     "Stable - but needs attention": "Stable",
@@ -94,7 +94,9 @@ def get_db():
 
 
 def migrate_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    _db_dir = os.path.dirname(DB_PATH)
+    if _db_dir:
+        os.makedirs(_db_dir, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
 
     # customers table — create if missing, then apply any column migrations
@@ -400,7 +402,8 @@ def ingest_fileobj(fileobj):
         )
     """)
     cols = [r[1] for r in conn.execute("PRAGMA table_info(customers)").fetchall()]
-    for col in ("last_modified", "notes"):
+    for col in ("last_modified", "notes", "state", "category", "bu_plm_sponsor",
+                "bu_tme_sponsor", "current_status", "next_actions", "get_well_plan", "custodian"):
         if col not in cols:
             conn.execute(f"ALTER TABLE customers ADD COLUMN {col} TEXT")
 
@@ -745,6 +748,8 @@ def edit_save(
     session = get_session(request)
     if not session:
         return RedirectResponse(url="/login", status_code=303)
+    if temperature not in TEMP_ORDER:
+        return HTMLResponse("Invalid temperature value", status_code=400)
     conn = get_db()
     conn.execute("""
         UPDATE customers SET
@@ -949,9 +954,10 @@ def admin(request: Request, msg: str = Query("")):
     conn.close()
 
     email_cfg = get_email_config()
-    conn = get_db()
     backup_dir_2 = get_setting("backup_dir_2", "")
-    conn.close()
+    flash_pw = get_setting("admin_flash_pw", "")
+    if flash_pw:
+        set_setting("admin_flash_pw", "")
     return templates.TemplateResponse(
         request=request, name="admin.html",
         context={
@@ -959,6 +965,7 @@ def admin(request: Request, msg: str = Query("")):
             "record_count": record_count, "db_exists": db_exists,
             "msg": msg, "session": session, "users": users,
             "email_cfg": email_cfg, "backup_dir_2": backup_dir_2,
+            "flash_pw": flash_pw,
         },
     )
 
@@ -979,10 +986,7 @@ def admin_backup_settings(request: Request, backup_dir_2: str = Form("")):
     session = get_session(request)
     if not session or session.get("role") != "admin":
         return RedirectResponse(url="/login", status_code=303)
-    conn = get_db()
-    set_setting(conn, "backup_dir_2", backup_dir_2.strip())
-    conn.commit()
-    conn.close()
+    set_setting("backup_dir_2", backup_dir_2.strip())
     log_action(session["username"], "backup_settings", "", f"secondary={backup_dir_2.strip() or 'cleared'}")
     return RedirectResponse(url="/admin?msg=Backup+settings+saved", status_code=303)
 
@@ -1008,7 +1012,7 @@ async def admin_upload(request: Request, file: UploadFile = File(...)):
             f"Sales Engineer: {c['se']}\n"
             f"Actively at risk: {c['at_risk']}\n"
             f"Risk reasons:   {c['reasons']}\n\n"
-            f"View in Opal: http://localhost:9090\n"
+            f"View in Opal-Mist: {get_setting('app_url', 'http://localhost:443')}\n"
         )
         send_alert(subject, body)
         log_action(session["username"], "email_alert", c['name'], "Critical customer alert sent")
@@ -1148,6 +1152,42 @@ def admin_export(request: Request):
     )
 
 
+@app.get("/admin/db-maintenance", response_class=HTMLResponse)
+def db_maintenance(request: Request, msg: str = Query("")):
+    session = get_session(request)
+    if not session or session.get("role") != "admin":
+        return RedirectResponse(url="/login", status_code=303)
+    conn = get_db()
+    customers = conn.execute(
+        "SELECT * FROM customers ORDER BY temperature_order, customer_name"
+    ).fetchall()
+    conn.close()
+    return templates.TemplateResponse(
+        request=request, name="db_maintenance.html",
+        context={"customers": customers, "session": session, "msg": msg},
+    )
+
+
+@app.post("/admin/db-maintenance/delete/{customer_id}")
+def db_maintenance_delete(request: Request, customer_id: int):
+    session = get_session(request)
+    if not session or session.get("role") != "admin":
+        return RedirectResponse(url="/login", status_code=303)
+    conn = get_db()
+    customer = conn.execute("SELECT customer_name FROM customers WHERE id = ?", (customer_id,)).fetchone()
+    if customer:
+        name = customer["customer_name"]
+        conn.execute("DELETE FROM customers WHERE id = ?", (customer_id,))
+        conn.execute("DELETE FROM heat_history WHERE customer_id = ?", (customer_id,))
+        conn.commit()
+        log_action(session["username"], "delete_customer", name, f"id={customer_id}")
+        msg = f"Deleted: {name}"
+    else:
+        msg = "Record not found"
+    conn.close()
+    return RedirectResponse(url=f"/admin/db-maintenance?msg={msg}", status_code=303)
+
+
 @app.post("/admin/delete-db")
 def admin_delete_db(request: Request, confirm: str = Form("")):
     session = get_session(request)
@@ -1169,7 +1209,10 @@ def admin_restore(request: Request, filename: str):
     session = get_session(request)
     if not session or session.get("role") != "admin":
         return RedirectResponse(url="/login", status_code=303)
-    src = os.path.join(BACKUP_DIR, filename)
+    safe_name = os.path.basename(filename)
+    if safe_name != filename:
+        return RedirectResponse(url="/admin?msg=Invalid+filename", status_code=303)
+    src = os.path.join(BACKUP_DIR, safe_name)
     if not os.path.exists(src):
         return RedirectResponse(url="/admin?msg=Backup+not+found", status_code=303)
     if os.path.exists(DB_PATH):
@@ -1297,10 +1340,8 @@ def admin_reset_password(request: Request, user_id: int):
     conn.close()
     if target_user:
         log_action(session["username"], "reset_password", target_user["username"])
-    return RedirectResponse(
-        url=f"/admin?msg=Temporary+password%3A+{temp_pw}+%E2%80%94+user+must+change+on+next+login",
-        status_code=303,
-    )
+        set_setting("admin_flash_pw", f"Temporary password for {target_user['username']}: {temp_pw} — user must change on next login")
+    return RedirectResponse(url="/admin", status_code=303)
 
 
 # ── Email Settings ────────────────────────────────────────────────────────────
