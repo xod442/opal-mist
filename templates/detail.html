@@ -74,10 +74,10 @@
 <body>
 
 <header>
-  <img src="/static/hpelogo.png" alt="HPE">
-  <a href="/">← Back to dashboard</a>
+  <img src="{{ rp }}/static/hpelogo.png" alt="HPE">
+  <a href="{{ rp }}/">← Back to dashboard</a>
   <h1>{{ c.customer_name }}</h1>
-  <a class="btn-edit" href="/customer/{{ c.id }}/edit">Edit</a>
+  <a class="btn-edit" href="{{ rp }}/customer/{{ c.id }}/edit">Edit</a>
 </header>
 
 <div class="container">

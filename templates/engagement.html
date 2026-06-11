@@ -71,17 +71,17 @@
 <body>
 
 <header>
-  <img src="/static/hpelogo.png" alt="HPE">
-  <a href="/">← Back to dashboard</a>
+  <img src="{{ rp }}/static/hpelogo.png" alt="HPE">
+  <a href="{{ rp }}/">← Back to dashboard</a>
   <h1>Engagement Tracker</h1>
   <div class="header-right">
     <div class="user-pill">
       <span style="color:var(--text2); font-weight:400;">Signed in:</span>
       <strong>{{ session.username }}</strong>
       <span style="color:var(--border)">|</span>
-      <a href="/change-password">Pwd</a>
+      <a href="{{ rp }}/change-password">Pwd</a>
       <span style="color:var(--border)">|</span>
-      <a href="/logout">Sign out</a>
+      <a href="{{ rp }}/logout">Sign out</a>
     </div>
   </div>
 </header>
@@ -125,7 +125,7 @@
               <span class="cell-empty">—</span>
             {% endif %}
           </td>
-          <td><a class="btn-edit" href="/customer/{{ c.id }}/support">Edit</a></td>
+          <td><a class="btn-edit" href="{{ rp }}/customer/{{ c.id }}/support">Edit</a></td>
         </tr>
         {% else %}
         <tr><td colspan="11" class="empty">No customers found. Ingest a CSV to get started.</td></tr>

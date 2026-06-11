@@ -121,21 +121,21 @@
 <body>
 
 <header>
-  <img src="/static/hpelogo.png" alt="HPE">
-  <a href="/admin">← Back to Admin</a>
+  <img src="{{ rp }}/static/hpelogo.png" alt="HPE">
+  <a href="{{ rp }}/admin">← Back to Admin</a>
   <h1>DB Maintenance</h1>
   <div class="header-right">
     <div class="user-pill">
       <span style="color:var(--text2); font-weight:400;">Signed in:</span>
       <strong>{{ session.username }}</strong>
       <span style="color:var(--border)">|</span>
-      <a href="/logout">Sign out</a>
+      <a href="{{ rp }}/logout">Sign out</a>
     </div>
   </div>
 </header>
 
 <!-- Hidden merge form — populated by JS -->
-<form id="merge-form" method="post" action="/admin/db-maintenance/merge"></form>
+<form id="merge-form" method="post" action="{{ rp }}/admin/db-maintenance/merge"></form>
 
 <div class="container">
 
@@ -180,8 +180,8 @@
           <td style="color:var(--text2); font-size:12px; white-space:nowrap;">{{ c.last_modified or c.submission_time or '—' }}</td>
           <td>
             <div class="actions">
-              <a class="btn-edit" href="/customer/{{ c.id }}/edit">Edit</a>
-              <form method="post" action="/admin/db-maintenance/delete/{{ c.id }}"
+              <a class="btn-edit" href="{{ rp }}/customer/{{ c.id }}/edit">Edit</a>
+              <form method="post" action="{{ rp }}/admin/db-maintenance/delete/{{ c.id }}"
                     onsubmit="return confirm('Delete {{ c.customer_name }}?\n\nThis will permanently remove all customer data, engagement records, and trend history for this customer. This cannot be undone.')">
                 <button class="btn-delete" type="submit">Delete</button>
               </form>

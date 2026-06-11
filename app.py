@@ -26,13 +26,15 @@ from passlib.context import CryptContext
 DB_PATH    = os.getenv("DB_PATH",    os.path.join(os.path.dirname(__file__), "opal.db"))
 BACKUP_DIR = os.getenv("BACKUP_DIR", os.path.join(os.path.dirname(__file__), "data", "backups"))
 SECRET_KEY = os.getenv("SECRET_KEY", "opal-change-me-in-production")
+ROOT_PATH  = os.getenv("ROOT_PATH", "")
 SESSION_MAX_AGE = 8 * 3600  # 8 hours
 
 os.makedirs(BACKUP_DIR, exist_ok=True)
 
-app = FastAPI(title="Opal-Mist")
+app = FastAPI(title="Opal-Mist", root_path=ROOT_PATH)
 app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
+templates.env.globals["rp"] = ROOT_PATH
 
 pwd_ctx    = CryptContext(schemes=["bcrypt"], deprecated="auto")
 serializer = URLSafeTimedSerializer(SECRET_KEY)
@@ -485,7 +487,7 @@ scheduler.start()
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, error: str = "", msg: str = ""):
     if get_session(request):
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/", status_code=303)
     return templates.TemplateResponse(request=request, name="login.html", context={"error": error, "msg": msg})
 
 
@@ -509,7 +511,7 @@ def login_submit(
     conn.commit()
     conn.close()
 
-    redirect_to = "/change-password" if user["must_change_password"] else "/"
+    redirect_to = f"{ROOT_PATH}/change-password" if user["must_change_password"] else f"{ROOT_PATH}/"
     response = RedirectResponse(url=redirect_to, status_code=303)
     set_session_cookie(response, user["id"], user["username"], user["role"])
     return response
@@ -517,7 +519,7 @@ def login_submit(
 
 @app.get("/logout")
 def logout():
-    response = RedirectResponse(url="/login", status_code=303)
+    response = RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     response.delete_cookie("session")
     return response
 
@@ -527,7 +529,7 @@ def logout():
 @app.get("/register", response_class=HTMLResponse)
 def register_page(request: Request, error: str = "", success: str = ""):
     if get_session(request):
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/", status_code=303)
     return templates.TemplateResponse(request=request, name="register.html",
                                       context={"error": error, "success": success})
 
@@ -541,7 +543,7 @@ def register_submit(
     confirm_password: str = Form(...),
 ):
     if get_session(request):
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/", status_code=303)
     username = username.strip()
     email = email.strip()
     if not username or not password or not email:
@@ -572,7 +574,7 @@ def register_submit(
         return templates.TemplateResponse(request=request, name="register.html",
                                           context={"error": f"Username '{username}' is already taken."})
     conn.close()
-    return RedirectResponse(url="/login?msg=Account+created.+You+can+now+sign+in.", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/login?msg=Account+created.+You+can+now+sign+in.", status_code=303)
 
 
 # ── Change password ───────────────────────────────────────────────────────────
@@ -581,7 +583,7 @@ def register_submit(
 def change_password_page(request: Request):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     user = conn.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
     conn.close()
@@ -601,7 +603,7 @@ def change_password_submit(
 ):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
 
     conn = get_db()
     user = conn.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
@@ -629,7 +631,7 @@ def change_password_submit(
                  (pwd_ctx.hash(new_password), session["user_id"]))
     conn.commit()
     conn.close()
-    return RedirectResponse(url="/?msg=Password+changed+successfully", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/?msg=Password+changed+successfully", status_code=303)
 
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -645,7 +647,7 @@ def dashboard(
 ):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
 
     conn = get_db()
     metrics = {}
@@ -704,7 +706,7 @@ def dashboard(
 def detail(request: Request, customer_id: int):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     customer = conn.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
     conn.close()
@@ -720,7 +722,7 @@ def detail(request: Request, customer_id: int):
 def edit_form(request: Request, customer_id: int):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     customer = conn.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
     conn.close()
@@ -757,7 +759,7 @@ def edit_save(
 ):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     if temperature not in TEMP_ORDER:
         return HTMLResponse("Invalid temperature value", status_code=400)
     conn = get_db()
@@ -786,7 +788,7 @@ def edit_save(
     conn.close()
     log_action(session["username"], "edit_customer", customer_name,
                f"heat={temp_label}, at_risk={at_risk}")
-    return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/", status_code=303)
 
 
 # ── Engagement Tracker ────────────────────────────────────────────────────────
@@ -795,7 +797,7 @@ def edit_save(
 def engagement(request: Request):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     customers = conn.execute(
         "SELECT * FROM customers ORDER BY temperature_order, customer_name"
@@ -813,7 +815,7 @@ def engagement(request: Request):
 def support_form(request: Request, customer_id: int):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     customer = conn.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
     conn.close()
@@ -841,7 +843,7 @@ def support_save(
 ):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     customer = conn.execute("SELECT customer_name FROM customers WHERE id = ?", (customer_id,)).fetchone()
     conn.execute("""
@@ -858,7 +860,7 @@ def support_save(
     if customer:
         log_action(session["username"], "edit_support", customer["customer_name"],
                    f"state={state}, category={category}")
-    return RedirectResponse(url=f"/customer/{customer_id}", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/customer/{customer_id}", status_code=303)
 
 
 # ── Stale Records ─────────────────────────────────────────────────────────────
@@ -867,7 +869,7 @@ def support_save(
 def stale(request: Request):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     customers = conn.execute("""
         SELECT *,
@@ -889,7 +891,7 @@ def stale(request: Request):
 def executive(request: Request):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     metrics = {}
     for label in ("Critical", "Hot", "Concerned", "Stable", "Happy"):
@@ -944,9 +946,9 @@ def executive(request: Request):
 def admin(request: Request, msg: str = Query("")):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     if session.get("role") != "admin":
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/", status_code=303)
 
     db_exists = os.path.exists(DB_PATH)
     db_size = f"{os.path.getsize(DB_PATH) // 1024} KB" if db_exists else "—"
@@ -984,28 +986,28 @@ def admin(request: Request, msg: str = Query("")):
 def admin_backup(request: Request):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     dest = do_backup()
     name = os.path.basename(dest) if dest else "nothing to backup"
     log_action(session["username"], "backup", name)
-    return RedirectResponse(url=f"/admin?msg=Backup+created%3A+{name}", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Backup+created%3A+{name}", status_code=303)
 
 
 @app.post("/admin/backup-settings")
 def admin_backup_settings(request: Request, backup_dir_2: str = Form("")):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     set_setting("backup_dir_2", backup_dir_2.strip())
     log_action(session["username"], "backup_settings", "", f"secondary={backup_dir_2.strip() or 'cleared'}")
-    return RedirectResponse(url="/admin?msg=Backup+settings+saved", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Backup+settings+saved", status_code=303)
 
 
 @app.post("/admin/upload")
 async def admin_upload(request: Request, file: UploadFile = File(...)):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     content = await file.read()
     text = content.decode("utf-8-sig")
     inserted, skipped_dup, skipped_mist, new_critical = ingest_fileobj(io.StringIO(text))
@@ -1030,14 +1032,14 @@ async def admin_upload(request: Request, file: UploadFile = File(...)):
     msg = f"{inserted}+inserted%2C+{skipped_dup}+duplicates+ignored%2C+{skipped_mist}+non-Mist+rows+skipped"
     if new_critical:
         msg += f"%2C+{len(new_critical)}+Critical+alert{'s' if len(new_critical) > 1 else ''}+sent"
-    return RedirectResponse(url=f"/admin?msg={msg}", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin?msg={msg}", status_code=303)
 
 
 @app.post("/admin/upload-engagement")
 async def admin_upload_engagement(request: Request, file: UploadFile = File(...)):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
 
     raw = await file.read()
     text = raw.decode("utf-8-sig")
@@ -1120,14 +1122,14 @@ async def admin_upload_engagement(request: Request, file: UploadFile = File(...)
         names = "%2C+".join(skipped_names[:5])
         more = f"+%28and+{skipped - 5}+more%29" if skipped > 5 else ""
         msg += f"%2C+{skipped}+skipped+(no+match)%3A+{names}{more}"
-    return RedirectResponse(url=f"/admin?msg={msg}", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin?msg={msg}", status_code=303)
 
 
 @app.get("/admin/export")
 def admin_export(request: Request):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     rows = conn.execute("SELECT * FROM customers ORDER BY temperature_order, customer_name").fetchall()
     conn.close()
@@ -1166,7 +1168,7 @@ def admin_export(request: Request):
 def db_maintenance(request: Request, msg: str = Query("")):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     customers = conn.execute(
         "SELECT * FROM customers ORDER BY temperature_order, customer_name"
@@ -1190,14 +1192,14 @@ TEXT_MERGE_FIELDS = [
 async def db_maintenance_merge(request: Request):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     form = await request.form()
     try:
         ids = [int(v) for v in form.getlist("ids")]
     except (ValueError, TypeError):
-        return RedirectResponse(url="/admin/db-maintenance?msg=Invalid+selection", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/admin/db-maintenance?msg=Invalid+selection", status_code=303)
     if len(ids) < 2:
-        return RedirectResponse(url="/admin/db-maintenance?msg=Select+at+least+2+records+to+merge", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/admin/db-maintenance?msg=Select+at+least+2+records+to+merge", status_code=303)
 
     conn = get_db()
     placeholders = ",".join("?" * len(ids))
@@ -1207,7 +1209,7 @@ async def db_maintenance_merge(request: Request):
 
     if len(records) < 2:
         conn.close()
-        return RedirectResponse(url="/admin/db-maintenance?msg=Records+not+found", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/admin/db-maintenance?msg=Records+not+found", status_code=303)
 
     survivor = min(records, key=lambda r: (r["temperature_order"], r["id"]))
     others = [r for r in records if r["id"] != survivor["id"]]
@@ -1253,14 +1255,14 @@ async def db_maintenance_merge(request: Request):
                f"merged into id={survivor['id']}; removed: {', '.join(merged_names)}")
 
     msg = f"Merged+into+{survivor['customer_name'].replace(' ', '+')}+%E2%80%94+{len(others)}+record{'s' if len(others)>1 else ''}+removed"
-    return RedirectResponse(url=f"/admin/db-maintenance?msg={msg}", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin/db-maintenance?msg={msg}", status_code=303)
 
 
 @app.post("/admin/db-maintenance/delete/{customer_id}")
 def db_maintenance_delete(request: Request, customer_id: int):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     customer = conn.execute("SELECT customer_name FROM customers WHERE id = ?", (customer_id,)).fetchone()
     if customer:
@@ -1273,42 +1275,42 @@ def db_maintenance_delete(request: Request, customer_id: int):
     else:
         msg = "Record not found"
     conn.close()
-    return RedirectResponse(url=f"/admin/db-maintenance?msg={msg}", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin/db-maintenance?msg={msg}", status_code=303)
 
 
 @app.post("/admin/delete-db")
 def admin_delete_db(request: Request, confirm: str = Form("")):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     if confirm.strip().upper() != "DELETE":
-        return RedirectResponse(url="/admin?msg=Type+DELETE+to+confirm", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Type+DELETE+to+confirm", status_code=303)
     conn = get_db()
     conn.execute("DELETE FROM customers")
     conn.execute("DELETE FROM heat_history")
     conn.commit()
     conn.close()
     log_action(session["username"], "delete_db", "", "All customer and engagement data wiped; users and settings preserved")
-    return RedirectResponse(url="/admin?msg=Customer+data+deleted.+Users%2C+logs%2C+and+settings+preserved.", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Customer+data+deleted.+Users%2C+logs%2C+and+settings+preserved.", status_code=303)
 
 
 @app.post("/admin/restore/{filename}")
 def admin_restore(request: Request, filename: str):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     safe_name = os.path.basename(filename)
     if safe_name != filename:
-        return RedirectResponse(url="/admin?msg=Invalid+filename", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Invalid+filename", status_code=303)
     src = os.path.join(BACKUP_DIR, safe_name)
     if not os.path.exists(src):
-        return RedirectResponse(url="/admin?msg=Backup+not+found", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Backup+not+found", status_code=303)
     if os.path.exists(DB_PATH):
         do_backup()
     shutil.copy2(src, DB_PATH)
     migrate_db()
     log_action(session["username"], "restore_backup", filename)
-    return RedirectResponse(url=f"/admin?msg=Restored+from+{filename}", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Restored+from+{filename}", status_code=303)
 
 
 # ── User management ───────────────────────────────────────────────────────────
@@ -1323,7 +1325,7 @@ def admin_user_create(
 ):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     try:
         conn.execute("""
@@ -1337,14 +1339,14 @@ def admin_user_create(
     except sqlite3.IntegrityError:
         msg = f"Username+{username}+already+exists"
     conn.close()
-    return RedirectResponse(url=f"/admin?msg={msg}", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin?msg={msg}", status_code=303)
 
 
 @app.get("/admin/users/example-csv")
 def admin_users_example_csv(request: Request):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     content = "username,email,password,role\njdoe,jdoe@example.com,TempPass1!,user\nsjones,sjones@example.com,TempPass2!,user\nbsmith,bsmith@example.com,TempPass3!,admin\n"
     return StreamingResponse(
         io.BytesIO(content.encode()),
@@ -1357,7 +1359,7 @@ def admin_users_example_csv(request: Request):
 def admin_user_import(request: Request, file: UploadFile = File(...)):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
 
     created = skipped = errors = 0
     try:
@@ -1388,19 +1390,19 @@ def admin_user_import(request: Request, file: UploadFile = File(...)):
         log_action(session["username"], "import_users", file.filename,
                    f"created={created} skipped={skipped} errors={errors}")
     except Exception as e:
-        return RedirectResponse(url=f"/admin?msg=Import+failed:+{e}", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Import+failed:+{e}", status_code=303)
 
     msg = f"Import+complete:+{created}+created,+{skipped}+skipped+(duplicate),+{errors}+errors"
-    return RedirectResponse(url=f"/admin?msg={msg}", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin?msg={msg}", status_code=303)
 
 
 @app.post("/admin/users/{user_id}/toggle")
 def admin_user_toggle(request: Request, user_id: int):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     if session["user_id"] == user_id:
-        return RedirectResponse(url="/admin?msg=Cannot+disable+your+own+account", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Cannot+disable+your+own+account", status_code=303)
     conn = get_db()
     target_user = conn.execute("SELECT username, is_active FROM users WHERE id = ?", (user_id,)).fetchone()
     conn.execute("UPDATE users SET is_active = 1 - is_active WHERE id = ?", (user_id,))
@@ -1409,14 +1411,14 @@ def admin_user_toggle(request: Request, user_id: int):
     if target_user:
         new_state = "disabled" if target_user["is_active"] else "enabled"
         log_action(session["username"], f"user_{new_state}", target_user["username"])
-    return RedirectResponse(url="/admin?msg=User+updated", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=User+updated", status_code=303)
 
 
 @app.post("/admin/users/{user_id}/reset-password")
 def admin_reset_password(request: Request, user_id: int):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     temp_pw = secrets.token_urlsafe(10)
     conn = get_db()
     target_user = conn.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
@@ -1429,7 +1431,7 @@ def admin_reset_password(request: Request, user_id: int):
     if target_user:
         log_action(session["username"], "reset_password", target_user["username"])
         set_setting("admin_flash_pw", f"Temporary password for {target_user['username']}: {temp_pw} — user must change on next login")
-    return RedirectResponse(url="/admin", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin", status_code=303)
 
 
 # ── Email Settings ────────────────────────────────────────────────────────────
@@ -1447,7 +1449,7 @@ def admin_email_settings(
 ):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     for key, value in [
         ("email_alerts_enabled", email_alerts_enabled),
         ("email_smtp_host",      email_smtp_host.strip()),
@@ -1462,20 +1464,20 @@ def admin_email_settings(
         set_setting("email_password", email_password)
     log_action(session["username"], "update_email_settings", "",
                f"enabled={email_alerts_enabled}, host={email_smtp_host}, to={email_to}")
-    return RedirectResponse(url="/admin?msg=Email+settings+saved", status_code=303)
+    return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Email+settings+saved", status_code=303)
 
 
 @app.post("/admin/email-test")
 def admin_email_test(request: Request):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     try:
         send_test_email()
         log_action(session["username"], "email_test", "", "Test email sent successfully")
-        return RedirectResponse(url="/admin?msg=Test+email+sent+successfully", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Test+email+sent+successfully", status_code=303)
     except Exception as e:
-        return RedirectResponse(url=f"/admin?msg=Email+error%3A+{str(e)[:120]}", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Email+error%3A+{str(e)[:120]}", status_code=303)
 
 
 # ── Audit Log ─────────────────────────────────────────────────────────────────
@@ -1484,7 +1486,7 @@ def admin_email_test(request: Request):
 def audit_log_page(request: Request):
     session = get_session(request)
     if not session or session.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     entries = conn.execute(
         "SELECT * FROM audit_log ORDER BY id DESC LIMIT 500"
@@ -1502,7 +1504,7 @@ def audit_log_page(request: Request):
 def trends(request: Request):
     session = get_session(request)
     if not session:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
 
     # Full heat history with customer info, ordered most recent first

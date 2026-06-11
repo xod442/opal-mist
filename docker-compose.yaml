@@ -9,6 +9,7 @@ services:
     environment:
       DB_PATH: /data/opal-mist.db
       BACKUP_DIR: /data/backups
+      ROOT_PATH: /opal-mist
     restart: unless-stopped
 
   ingest:

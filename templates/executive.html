@@ -160,8 +160,8 @@
 <body>
 
 <header>
-  <img src="/static/hpelogo.png" alt="HPE">
-  <a href="/">← Dashboard</a>
+  <img src="{{ rp }}/static/hpelogo.png" alt="HPE">
+  <a href="{{ rp }}/">← Dashboard</a>
   <div>
     <h1>Opal-Mist — Executive Overview</h1>
     <div style="font-size:11px; color:var(--text2); letter-spacing:0.3px; margin-top:1px;">
@@ -229,7 +229,7 @@
           <div class="cust-risk" style="margin-top:4px"><strong>Goals:</strong> {{ c.near_term_goals }}</div>
           {% endif %}
           <div style="margin-top:8px">
-            <a class="detail-link" href="/customer/{{ c.id }}">View full record →</a>
+            <a class="detail-link" href="{{ rp }}/customer/{{ c.id }}">View full record →</a>
           </div>
         </div>
         <div class="badges">
@@ -291,9 +291,9 @@
       <div class="panel">
         <div class="section-title">Quick Filters</div>
         <div style="display:flex; flex-direction:column; gap:8px;">
-          <a href="/?filter_temp=Critical" style="color:var(--critical); text-decoration:none; font-size:13px; font-weight:600;">→ View all Critical ({{ metrics.Critical }})</a>
-          <a href="/?filter_temp=Hot" style="color:var(--hot); text-decoration:none; font-size:13px; font-weight:600;">→ View all Hot ({{ metrics.Hot }})</a>
-          <a href="/?filter_risk=Yes+%E2%80%93+actively+evaluating+other+vendors" style="color:var(--purple); text-decoration:none; font-size:13px; font-weight:600;">→ View all At Risk ({{ metrics['At Risk'] }})</a>
+          <a href="{{ rp }}/?filter_temp=Critical" style="color:var(--critical); text-decoration:none; font-size:13px; font-weight:600;">→ View all Critical ({{ metrics.Critical }})</a>
+          <a href="{{ rp }}/?filter_temp=Hot" style="color:var(--hot); text-decoration:none; font-size:13px; font-weight:600;">→ View all Hot ({{ metrics.Hot }})</a>
+          <a href="{{ rp }}/?filter_risk=Yes+%E2%80%93+actively+evaluating+other+vendors" style="color:var(--purple); text-decoration:none; font-size:13px; font-weight:600;">→ View all At Risk ({{ metrics['At Risk'] }})</a>
         </div>
       </div>
 

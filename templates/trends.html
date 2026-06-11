@@ -93,17 +93,17 @@
 <body>
 
 <header>
-  <img src="/static/hpelogo.png" alt="HPE">
-  <a href="/">← Back to dashboard</a>
+  <img src="{{ rp }}/static/hpelogo.png" alt="HPE">
+  <a href="{{ rp }}/">← Back to dashboard</a>
   <h1>Trend Tracker</h1>
   <div class="header-right">
     <div class="user-pill">
       <span style="color:var(--text2); font-weight:400;">Signed in:</span>
       <strong>{{ session.username }}</strong>
       <span style="color:var(--border)">|</span>
-      <a href="/change-password">Pwd</a>
+      <a href="{{ rp }}/change-password">Pwd</a>
       <span style="color:var(--border)">|</span>
-      <a href="/logout">Sign out</a>
+      <a href="{{ rp }}/logout">Sign out</a>
     </div>
   </div>
 </header>
@@ -189,7 +189,7 @@
           <td class="ts">{{ r.curr_ts or '—' }}</td>
           <td>{{ r.account_manager or '—' }}</td>
           <td>{{ r.sales_engineer or '—' }}</td>
-          <td><a class="detail-link" href="/customer/{{ r.customer_id }}">Details →</a></td>
+          <td><a class="detail-link" href="{{ rp }}/customer/{{ r.customer_id }}">Details →</a></td>
         </tr>
         {% else %}
         <tr><td colspan="8" class="empty">No trend data yet. Trends appear after customers are ingested or edited.</td></tr>

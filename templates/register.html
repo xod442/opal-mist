@@ -105,7 +105,7 @@
 
 <div class="login-wrap">
   <div class="brand">
-    <img src="/static/hpelogo.png" alt="HPE">
+    <img src="{{ rp }}/static/hpelogo.png" alt="HPE">
     <h1>Opal-Mist</h1>
     <div class="tagline">
       <span>O</span>perational <span>P</span>riority and <span>A</span>t-Risk <span>L</span>ikelihood
@@ -118,7 +118,7 @@
     {% if error %}
     <div class="error">{{ error }}</div>
     {% endif %}
-    <form method="post" action="/register">
+    <form method="post" action="{{ rp }}/register">
       <div class="field">
         <label for="username">Username</label>
         <input type="email" id="username" name="username" autocomplete="username"
@@ -142,7 +142,7 @@
     </form>
   </div>
   <div class="back-link">
-    Already have an account? <a href="/login">Sign in</a>
+    Already have an account? <a href="{{ rp }}/login">Sign in</a>
   </div>
 </div>
 

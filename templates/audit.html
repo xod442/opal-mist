@@ -78,15 +78,15 @@
 <body>
 
 <header>
-  <img src="/static/hpelogo.png" alt="HPE">
-  <a href="/admin">← Back to admin</a>
+  <img src="{{ rp }}/static/hpelogo.png" alt="HPE">
+  <a href="{{ rp }}/admin">← Back to admin</a>
   <h1>Audit Log</h1>
   <div class="header-right">
     <div class="user-pill">
       <span style="color:var(--text2); font-weight:400;">Signed in:</span>
       <strong>{{ session.username }}</strong>
       <span style="color:var(--border)">|</span>
-      <a href="/logout">Sign out</a>
+      <a href="{{ rp }}/logout">Sign out</a>
     </div>
   </div>
 </header>

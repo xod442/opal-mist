@@ -128,14 +128,14 @@
 <body>
 
 <header>
-  <img src="/static/hpelogo.png" alt="HPE">
-  <a href="/customer/{{ c.id }}/edit">← Back to edit</a>
+  <img src="{{ rp }}/static/hpelogo.png" alt="HPE">
+  <a href="{{ rp }}/customer/{{ c.id }}/edit">← Back to edit</a>
   <h1>Support — {{ c.customer_name }}</h1>
   <span class="badge badge-{{ c.temperature_label }}">{{ c.temperature_label }}</span>
 </header>
 
 <div class="container">
-<form method="post" action="/customer/{{ c.id }}/support">
+<form method="post" action="{{ rp }}/customer/{{ c.id }}/support">
 
   <!-- Read-only fields -->
   <div class="section-label">Read-only fields</div>
@@ -210,7 +210,7 @@
 
   <div class="actions">
     <button type="submit" class="btn-save">Save changes</button>
-    <a href="/customer/{{ c.id }}/edit" class="btn-cancel">Cancel</a>
+    <a href="{{ rp }}/customer/{{ c.id }}/edit" class="btn-cancel">Cancel</a>
   </div>
 
 </form>

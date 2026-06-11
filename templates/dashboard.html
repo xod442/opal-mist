@@ -207,7 +207,7 @@
 <body>
 
 <header>
-  <img src="/static/hpelogo.png" alt="HPE">
+  <img src="{{ rp }}/static/hpelogo.png" alt="HPE">
   <div>
     <h1>Opal-Mist</h1>
     <div style="font-size:11px; color:var(--text2); letter-spacing:0.3px; margin-top:1px;">
@@ -218,17 +218,17 @@
     </div>
   </div>
   <div style="margin-left:auto; display:flex; gap:10px; align-items:center;">
-    <a href="/executive" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Executive View</a>
-    <a href="/trends" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Trends</a>
-    <a href="/stale" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Stale Records</a>
-    <a href="/engagement" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Engagement</a>
-    {% if session.role == 'admin' %}<a href="/admin" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Admin</a>{% endif %}
+    <a href="{{ rp }}/executive" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Executive View</a>
+    <a href="{{ rp }}/trends" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Trends</a>
+    <a href="{{ rp }}/stale" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Stale Records</a>
+    <a href="{{ rp }}/engagement" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Engagement</a>
+    {% if session.role == 'admin' %}<a href="{{ rp }}/admin" style="color:var(--text2); text-decoration:none; font-size:13px; border:1px solid var(--border); border-radius:6px; padding:5px 14px;">Admin</a>{% endif %}
     <div class="user-pill">
       <span style="color:var(--text2); font-weight:400;">Signed in:</span> <strong>{{ session.username }}</strong>
       <span style="color:var(--border)">|</span>
-      <a href="/change-password">Pwd</a>
+      <a href="{{ rp }}/change-password">Pwd</a>
       <span style="color:var(--border)">|</span>
-      <a href="/logout">Sign out</a>
+      <a href="{{ rp }}/logout">Sign out</a>
     </div>
   </div>
 </header>
@@ -237,31 +237,31 @@
 
   <!-- Metric Cards -->
   <div class="metrics">
-    <a class="card total {% if not filter_temp and not filter_risk %}active{% endif %}" href="/">
+    <a class="card total {% if not filter_temp and not filter_risk %}active{% endif %}" href="{{ rp }}/">
       <div class="num">{{ metrics.Total }}</div>
       <div class="lbl">Total</div>
     </a>
-    <a class="card critical {% if filter_temp == 'Critical' %}active{% endif %}" href="/?filter_temp=Critical">
+    <a class="card critical {% if filter_temp == 'Critical' %}active{% endif %}" href="{{ rp }}/?filter_temp=Critical">
       <div class="num">{{ metrics.Critical }}</div>
       <div class="lbl">Critical</div>
     </a>
-    <a class="card hot {% if filter_temp == 'Hot' %}active{% endif %}" href="/?filter_temp=Hot">
+    <a class="card hot {% if filter_temp == 'Hot' %}active{% endif %}" href="{{ rp }}/?filter_temp=Hot">
       <div class="num">{{ metrics.Hot }}</div>
       <div class="lbl">Hot</div>
     </a>
-    <a class="card concerned {% if filter_temp == 'Concerned' %}active{% endif %}" href="/?filter_temp=Concerned">
+    <a class="card concerned {% if filter_temp == 'Concerned' %}active{% endif %}" href="{{ rp }}/?filter_temp=Concerned">
       <div class="num">{{ metrics.Concerned }}</div>
       <div class="lbl">Concerned</div>
     </a>
-    <a class="card stable {% if filter_temp == 'Stable' %}active{% endif %}" href="/?filter_temp=Stable">
+    <a class="card stable {% if filter_temp == 'Stable' %}active{% endif %}" href="{{ rp }}/?filter_temp=Stable">
       <div class="num">{{ metrics.Stable }}</div>
       <div class="lbl">Stable</div>
     </a>
-    <a class="card happy {% if filter_temp == 'Happy' %}active{% endif %}" href="/?filter_temp=Happy">
+    <a class="card happy {% if filter_temp == 'Happy' %}active{% endif %}" href="{{ rp }}/?filter_temp=Happy">
       <div class="num">{{ metrics.Happy }}</div>
       <div class="lbl">Happy</div>
     </a>
-    <a class="card atrisk {% if filter_risk == 'Yes – actively evaluating other vendors' %}active{% endif %}" href="/?filter_risk=Yes+%E2%80%93+actively+evaluating+other+vendors">
+    <a class="card atrisk {% if filter_risk == 'Yes – actively evaluating other vendors' %}active{% endif %}" href="{{ rp }}/?filter_risk=Yes+%E2%80%93+actively+evaluating+other+vendors">
       <div class="num">{{ metrics['At Risk'] }}</div>
       <div class="lbl">At Risk</div>
     </a>
@@ -289,7 +289,7 @@
       {% endfor %}
     </select>
     <button type="submit">Filter</button>
-    <a class="clear" href="/">Clear</a>
+    <a class="clear" href="{{ rp }}/">Clear</a>
   </form>
 
   <div class="count">{{ customers|length }} customer{% if customers|length != 1 %}s{% endif %}</div>
@@ -340,9 +340,9 @@
           <td>{{ c.sales_engineer }}</td>
           <td><div class="truncate" title="{{ c.risk_reasons }}">{{ c.risk_reasons }}</div></td>
           <td style="white-space:nowrap">
-            <a class="detail-link" href="/customer/{{ c.id }}">Details →</a>
+            <a class="detail-link" href="{{ rp }}/customer/{{ c.id }}">Details →</a>
             &nbsp;
-            <a class="edit-link" href="/customer/{{ c.id }}/edit">Edit</a>
+            <a class="edit-link" href="{{ rp }}/customer/{{ c.id }}/edit">Edit</a>
           </td>
         </tr>
         {% else %}

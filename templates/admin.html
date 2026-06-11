@@ -200,10 +200,10 @@
 <body>
 
 <header>
-  <img src="/static/hpelogo.png" alt="HPE">
-  <a href="/">← Back to dashboard</a>
-  <a href="/admin/audit" style="font-size:13px; color:var(--text2); border:1px solid var(--border); border-radius:6px; padding:5px 14px; text-decoration:none; margin-left:8px;">Audit Log</a>
-  <a href="/docs" target="_blank" rel="noopener" style="font-size:13px; color:var(--accent); border:1px solid rgba(42,210,201,0.35); border-radius:6px; padding:5px 14px; text-decoration:none; margin-left:4px;">API ↗</a>
+  <img src="{{ rp }}/static/hpelogo.png" alt="HPE">
+  <a href="{{ rp }}/">← Back to dashboard</a>
+  <a href="{{ rp }}/admin/audit" style="font-size:13px; color:var(--text2); border:1px solid var(--border); border-radius:6px; padding:5px 14px; text-decoration:none; margin-left:8px;">Audit Log</a>
+  <a href="{{ rp }}/docs" target="_blank" rel="noopener" style="font-size:13px; color:var(--accent); border:1px solid rgba(42,210,201,0.35); border-radius:6px; padding:5px 14px; text-decoration:none; margin-left:4px;">API ↗</a>
   <div>
     <h1>Opal-Mist — Admin Tools</h1>
     <div style="font-size:11px; color:var(--text2); letter-spacing:0.3px; margin-top:1px;">
@@ -217,9 +217,9 @@
     <div class="user-pill">
       <strong>{{ session.username }}</strong>
       <span style="color:var(--border)">|</span>
-      <a href="/change-password">Change password</a>
+      <a href="{{ rp }}/change-password">Change password</a>
       <span style="color:var(--border)">|</span>
-      <a href="/logout">Sign out</a>
+      <a href="{{ rp }}/logout">Sign out</a>
     </div>
   </div>
 </header>
@@ -253,14 +253,14 @@
   <div class="section">
     <h2>Backup Database</h2>
     <p>Creates a timestamped copy in the backups folder. Automatic backups run daily at 6 AM and 6 PM.</p>
-    <form method="post" action="/admin/backup">
+    <form method="post" action="{{ rp }}/admin/backup">
       <button class="btn btn-primary" type="submit">Run backup now</button>
     </form>
     <h3 style="margin-top:20px; margin-bottom:8px; font-size:14px; font-weight:600;">Secondary Backup Location</h3>
     <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">
       If set, every backup is also copied to this path. Use an absolute path accessible inside the container (e.g. a mounted volume or NAS).
     </p>
-    <form method="post" action="/admin/backup-settings" style="display:flex; gap:10px; align-items:center;">
+    <form method="post" action="{{ rp }}/admin/backup-settings" style="display:flex; gap:10px; align-items:center;">
       <input type="text" name="backup_dir_2" value="{{ backup_dir_2 }}" placeholder="/mnt/nas/opal-backups" style="flex:1; background:var(--surface2); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:8px 12px; font-size:13px;">
       <button class="btn btn-primary" type="submit">Save</button>
     </form>
@@ -270,7 +270,7 @@
   <div class="section">
     <h2>Upload CSV</h2>
     <p>Upload a new Microsoft Forms CSV export. Only Mist architecture rows are imported — non-Mist rows are skipped. Duplicate entries (by ID) are ignored.</p>
-    <form method="post" action="/admin/upload" enctype="multipart/form-data">
+    <form method="post" action="{{ rp }}/admin/upload" enctype="multipart/form-data">
       <div class="upload-area">
         <input type="file" name="file" accept=".csv" required>
         <button class="btn btn-green" type="submit">Upload &amp; ingest</button>
@@ -283,7 +283,7 @@
     <h2>Upload Engagement CSV</h2>
     <p>Upload an engagement tracking CSV export. Records are matched to existing customers by <strong>Customer Name</strong>. Duplicate customer names in the CSV are merged — conflicting field values are concatenated. Rows with no matching customer are skipped and reported.</p>
     <p style="font-size:12px; color:var(--text2); margin-top:6px;">Expected columns: <code>Customer Name, Sales Engineer, State, Catalog, BU PLM Sponsor, BU PLM TME, Current Status, Next Actions, Get Well Plan Link</code></p>
-    <form method="post" action="/admin/upload-engagement" enctype="multipart/form-data">
+    <form method="post" action="{{ rp }}/admin/upload-engagement" enctype="multipart/form-data">
       <div class="upload-area">
         <input type="file" name="file" accept=".csv" required>
         <button class="btn btn-green" type="submit">Upload &amp; ingest</button>
@@ -295,7 +295,7 @@
   <div class="section">
     <h2>Export to CSV</h2>
     <p>Download the entire database as a CSV file.</p>
-    <a class="btn btn-outline" href="/admin/export">Download CSV</a>
+    <a class="btn btn-outline" href="{{ rp }}/admin/export">Download CSV</a>
   </div>
 
   <!-- Restore from backup -->
@@ -315,7 +315,7 @@
           <td>{{ b.size }}</td>
           <td>{{ b.modified }}</td>
           <td>
-            <form method="post" action="/admin/restore/{{ b.name }}"
+            <form method="post" action="{{ rp }}/admin/restore/{{ b.name }}"
                   onsubmit="return confirm('Restore from {{ b.name }}? Current database will be backed up first.')">
               <button class="btn btn-outline btn-sm" type="submit">Restore</button>
             </form>
@@ -335,7 +335,7 @@
     <h2>Email Alerts</h2>
     <p>Send an email notification when a new Critical customer is ingested via CSV upload. Requires an SMTP server.</p>
 
-    <form method="post" action="/admin/email-settings">
+    <form method="post" action="{{ rp }}/admin/email-settings">
       <!-- Enable toggle -->
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border);">
         <label style="font-size:13px; font-weight:600; color:var(--text);">Enable email alerts</label>
@@ -395,7 +395,7 @@
     </form>
 
     <!-- Test email (separate form) -->
-    <form method="post" action="/admin/email-test" style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+    <form method="post" action="{{ rp }}/admin/email-test" style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
       <button class="btn btn-outline" type="submit">Send test email</button>
       <span style="color:var(--text2); font-size:12px; margin-left:10px;">Sends a test message using the settings above. Save first.</span>
     </form>
@@ -429,13 +429,13 @@
           <td style="color:var(--text2); font-size:12px;">{{ u.last_login or 'Never' }}</td>
           <td style="white-space:nowrap; display:flex; gap:6px;">
             {% if u.id != session.user_id %}
-            <form method="post" action="/admin/users/{{ u.id }}/toggle">
+            <form method="post" action="{{ rp }}/admin/users/{{ u.id }}/toggle">
               <button class="btn btn-outline btn-sm" type="submit">
                 {{ 'Disable' if u.is_active else 'Enable' }}
               </button>
             </form>
             {% endif %}
-            <form method="post" action="/admin/users/{{ u.id }}/reset-password"
+            <form method="post" action="{{ rp }}/admin/users/{{ u.id }}/reset-password"
                   onsubmit="return confirm('Reset password for {{ u.username }} to a temporary password?')">
               <button class="btn btn-outline btn-sm" type="submit">Reset pw</button>
             </form>
@@ -448,7 +448,7 @@
     {% endif %}
 
     <!-- Create new user -->
-    <form method="post" action="/admin/users/create" class="create-user-form">
+    <form method="post" action="{{ rp }}/admin/users/create" class="create-user-form">
       <input type="text" name="username" placeholder="Username" required>
       <input type="text" name="email" placeholder="Email (optional)">
       <input type="password" name="password" placeholder="Temporary password" required>
@@ -467,9 +467,9 @@
     <p style="font-size:13px; color:var(--text2); margin-bottom:12px;">
       Upload a CSV with columns: <code>username</code>, <code>email</code>, <code>password</code>, <code>role</code>.
       Existing usernames are skipped. All imported users must change their password on first login.
-      Download <a href="/admin/users/example-csv" style="color:var(--accent);">example_users.csv</a> for the correct format.
+      Download <a href="{{ rp }}/admin/users/example-csv" style="color:var(--accent);">example_users.csv</a> for the correct format.
     </p>
-    <form method="post" action="/admin/users/import" enctype="multipart/form-data" style="display:flex; gap:10px; align-items:center;">
+    <form method="post" action="{{ rp }}/admin/users/import" enctype="multipart/form-data" style="display:flex; gap:10px; align-items:center;">
       <input type="file" name="file" accept=".csv" required style="color:var(--text2); font-size:13px;">
       <button class="btn btn-primary" type="submit">Import users</button>
     </form>
@@ -479,14 +479,14 @@
   <div class="section">
     <h2>DB Maintenance</h2>
     <p>View, edit, or delete individual customer records. Each delete removes all data for that customer including engagement history and trend data.</p>
-    <a class="btn btn-outline" href="/admin/db-maintenance">Open DB Maintenance</a>
+    <a class="btn btn-outline" href="{{ rp }}/admin/db-maintenance">Open DB Maintenance</a>
   </div>
 
   <!-- Delete customer data -->
   <div class="section">
     <h2>Delete Customer Data</h2>
     <p>Wipes all customer records, engagement data, and trend history. User accounts, email settings, and audit log are preserved.</p>
-    <form method="post" action="/admin/delete-db">
+    <form method="post" action="{{ rp }}/admin/delete-db">
       <div class="delete-row">
         <input type="text" name="confirm" placeholder='Type "DELETE"' autocomplete="off">
         <button class="btn btn-red" type="submit">Delete customer data</button>

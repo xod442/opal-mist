@@ -104,8 +104,8 @@
 <body>
 
 <header>
-  <img src="/static/hpelogo.png" alt="HPE">
-  <a href="/">← Dashboard</a>
+  <img src="{{ rp }}/static/hpelogo.png" alt="HPE">
+  <a href="{{ rp }}/">← Dashboard</a>
   <div class="header-title">
     <h1>Opal-Mist — Stale Records</h1>
     <div class="acronym">
@@ -166,8 +166,8 @@
           <td style="font-size:12px; color:var(--text2);">{{ c.last_touched or '—' }}</td>
           <td><span class="days-badge {{ day_class }}">{{ days }} day{% if days != 1 %}s{% endif %}</span></td>
           <td style="white-space:nowrap;">
-            <a class="link" href="/customer/{{ c.id }}">Details →</a>
-            <a class="edit-link" href="/customer/{{ c.id }}/edit">Edit</a>
+            <a class="link" href="{{ rp }}/customer/{{ c.id }}">Details →</a>
+            <a class="edit-link" href="{{ rp }}/customer/{{ c.id }}/edit">Edit</a>
           </td>
         </tr>
         {% endfor %}
