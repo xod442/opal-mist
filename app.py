@@ -1182,6 +1182,7 @@ TEXT_MERGE_FIELDS = [
     "notes", "background", "risk_reasons", "architecture",
     "near_term_goals", "ask_from_bu", "next_actions",
     "get_well_plan", "current_status",
+    "state", "category", "bu_plm_sponsor", "bu_tme_sponsor", "custodian",
 ]
 
 
@@ -1225,12 +1226,16 @@ async def db_maintenance_merge(request: Request):
         UPDATE customers SET
             notes=?, background=?, risk_reasons=?, architecture=?,
             near_term_goals=?, ask_from_bu=?, next_actions=?,
-            get_well_plan=?, current_status=?, last_modified=?
+            get_well_plan=?, current_status=?,
+            state=?, category=?, bu_plm_sponsor=?, bu_tme_sponsor=?, custodian=?,
+            last_modified=?
         WHERE id=?
     """, (
         updates["notes"], updates["background"], updates["risk_reasons"],
         updates["architecture"], updates["near_term_goals"], updates["ask_from_bu"],
         updates["next_actions"], updates["get_well_plan"], updates["current_status"],
+        updates["state"], updates["category"], updates["bu_plm_sponsor"],
+        updates["bu_tme_sponsor"], updates["custodian"],
         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         survivor["id"],
     ))
