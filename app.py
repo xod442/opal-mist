@@ -1178,6 +1178,79 @@ def db_maintenance(request: Request, msg: str = Query("")):
     )
 
 
+TEXT_MERGE_FIELDS = [
+    "notes", "background", "risk_reasons", "architecture",
+    "near_term_goals", "ask_from_bu", "next_actions",
+    "get_well_plan", "current_status",
+]
+
+
+@app.post("/admin/db-maintenance/merge")
+async def db_maintenance_merge(request: Request):
+    session = get_session(request)
+    if not session or session.get("role") != "admin":
+        return RedirectResponse(url="/login", status_code=303)
+    form = await request.form()
+    try:
+        ids = [int(v) for v in form.getlist("ids")]
+    except (ValueError, TypeError):
+        return RedirectResponse(url="/admin/db-maintenance?msg=Invalid+selection", status_code=303)
+    if len(ids) < 2:
+        return RedirectResponse(url="/admin/db-maintenance?msg=Select+at+least+2+records+to+merge", status_code=303)
+
+    conn = get_db()
+    placeholders = ",".join("?" * len(ids))
+    records = conn.execute(
+        f"SELECT * FROM customers WHERE id IN ({placeholders})", ids
+    ).fetchall()
+
+    if len(records) < 2:
+        conn.close()
+        return RedirectResponse(url="/admin/db-maintenance?msg=Records+not+found", status_code=303)
+
+    survivor = min(records, key=lambda r: (r["temperature_order"], r["id"]))
+    others = [r for r in records if r["id"] != survivor["id"]]
+
+    updates = {}
+    for field in TEXT_MERGE_FIELDS:
+        parts = []
+        if survivor[field] and survivor[field].strip():
+            parts.append(survivor[field].strip())
+        for r in others:
+            if r[field] and r[field].strip():
+                parts.append(r[field].strip())
+        updates[field] = "\n---\n".join(parts) if parts else None
+
+    conn.execute("""
+        UPDATE customers SET
+            notes=?, background=?, risk_reasons=?, architecture=?,
+            near_term_goals=?, ask_from_bu=?, next_actions=?,
+            get_well_plan=?, current_status=?, last_modified=?
+        WHERE id=?
+    """, (
+        updates["notes"], updates["background"], updates["risk_reasons"],
+        updates["architecture"], updates["near_term_goals"], updates["ask_from_bu"],
+        updates["next_actions"], updates["get_well_plan"], updates["current_status"],
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        survivor["id"],
+    ))
+
+    merged_names = []
+    for r in others:
+        conn.execute("UPDATE heat_history SET customer_id=? WHERE customer_id=?", (survivor["id"], r["id"]))
+        conn.execute("DELETE FROM customers WHERE id=?", (r["id"],))
+        merged_names.append(r["customer_name"])
+
+    conn.commit()
+    conn.close()
+
+    log_action(session["username"], "merge_customers", survivor["customer_name"],
+               f"merged into id={survivor['id']}; removed: {', '.join(merged_names)}")
+
+    msg = f"Merged+into+{survivor['customer_name'].replace(' ', '+')}+%E2%80%94+{len(others)}+record{'s' if len(others)>1 else ''}+removed"
+    return RedirectResponse(url=f"/admin/db-maintenance?msg={msg}", status_code=303)
+
+
 @app.post("/admin/db-maintenance/delete/{customer_id}")
 def db_maintenance_delete(request: Request, customer_id: int):
     session = get_session(request)
