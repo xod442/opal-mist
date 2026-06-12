@@ -273,6 +273,7 @@
   <div class="nav-section">Operations</div>
   <a class="nav-link" href="#starting-stopping">Starting &amp; Stopping</a>
   <a class="nav-link" href="#ingest">Ingesting CSV Data</a>
+  <a class="nav-link" href="#motd">Message of the Day</a>
   <a class="nav-link" href="#email-alerts">Email Alerts</a>
   <a class="nav-link" href="#backup-restore">Backup &amp; Restore</a>
   <a class="nav-link" href="#export">Exporting Data</a>
@@ -602,6 +603,33 @@ docker compose run --rm ingest</code></pre>
     </div>
   </section>
 
+  <!-- ── MOTD ── -->
+  <section id="motd">
+    <h2>Message of the Day</h2>
+    <p>
+      The <strong>Message of the Day (MOTD)</strong> is a short announcement that scrolls across the bottom
+      of the login page as a ticker. Use it to notify users of maintenance windows, new features, or any
+      time-sensitive information.
+    </p>
+
+    <h3>Setting the MOTD</h3>
+    <div class="steps-wrap">
+      <ol class="steps">
+        <li>Log in as an admin and click <strong>Admin</strong>.</li>
+        <li>Find the <strong>Message of the Day</strong> section near the top of the page.</li>
+        <li>Type your message in the text area and click <strong>Save MOTD</strong>.</li>
+        <li>The ticker will appear immediately on the login page for all users.</li>
+      </ol>
+    </div>
+
+    <h3>Clearing the MOTD</h3>
+    <p>To hide the ticker, clear the text area and click <strong>Save MOTD</strong>. When the field is blank, no ticker is displayed.</p>
+
+    <div class="callout">
+      <strong>Note:</strong> The MOTD is stored in the <code>settings</code> table in the database and persists across container restarts.
+    </div>
+  </section>
+
   <!-- ── Backup / Restore ── -->
   <section id="backup-restore">
     <h2>Backup &amp; Restore</h2>
@@ -897,6 +925,14 @@ bsmith,bsmith@example.com,TempPass3!,admin</code></pre>
       <li><strong>Editable fields</strong> — Customer Temperature, Actively at risk, Risk reasons, Architecture, Near term goals, BU contact, Ask from business unit, Background, and Additional Notes.</li>
     </ul>
     <p>Click <strong>Save changes</strong> to commit and return to the dashboard. Click <strong>Support</strong> to open the Support page for this customer. Every save is recorded in the Audit Log.</p>
+
+    <h3>Get Well Plan links</h3>
+    <p>
+      If the <strong>Get Well Plan</strong> field contains a URL (e.g., a SharePoint link), the detail page
+      renders it as a clickable <strong>Open Get Well Plan ↗</strong> button that opens in a new tab.
+      If the field contains plain text it is displayed as-is. Paste the SharePoint URL directly into
+      the field on the Edit or Support page.
+    </p>
   </section>
 
   <!-- ── Support Page ── -->
@@ -1257,6 +1293,7 @@ curl -b cookies.txt http://localhost:443/admin/export</code></pre>
           <tr><td><code>DB_PATH</code></td><td><code>/data/opal.db</code></td><td>Full path to the SQLite database file inside the container</td></tr>
           <tr><td><code>BACKUP_DIR</code></td><td><code>/data/backups</code></td><td>Directory where backup files are written</td></tr>
           <tr><td><code>SECRET_KEY</code></td><td><code>opal-change-me-in-production</code></td><td>HMAC key for signing session cookies. Change this in any non-local deployment.</td></tr>
+          <tr><td><code>ROOT_PATH</code></td><td><em>empty</em></td><td>URL prefix when the app is served behind a reverse proxy at a subpath (e.g. <code>/opal-mist</code>). Leave empty for direct IP/port access.</td></tr>
         </tbody>
       </table>
     </div>
