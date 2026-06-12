@@ -249,6 +249,16 @@
     </div>
   </div>
 
+  <!-- MOTD -->
+  <div class="section">
+    <h2>Message of the Day</h2>
+    <p>Displayed as a scrolling ticker at the bottom of the login page. Leave blank to hide it.</p>
+    <form method="post" action="{{ rp }}/admin/motd" style="display:flex; gap:10px; align-items:flex-start; margin-top:12px;">
+      <textarea name="motd" rows="2" style="flex:1; background:var(--input-bg); border:1px solid var(--border); border-radius:7px; padding:8px 12px; color:var(--text); font-size:13px; font-family:inherit; resize:vertical;">{{ motd or '' }}</textarea>
+      <button class="btn btn-primary" type="submit" style="white-space:nowrap;">Save MOTD</button>
+    </form>
+  </div>
+
   <!-- Manual backup -->
   <div class="section">
     <h2>Backup Database</h2>

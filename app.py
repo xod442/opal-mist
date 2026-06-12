@@ -488,7 +488,7 @@ scheduler.start()
 def login_page(request: Request, error: str = "", msg: str = ""):
     if get_session(request):
         return RedirectResponse(url=f"{ROOT_PATH}/", status_code=303)
-    return templates.TemplateResponse(request=request, name="login.html", context={"error": error, "msg": msg})
+    return templates.TemplateResponse(request=request, name="login.html", context={"error": error, "msg": msg, "motd": get_setting("motd", "")})
 
 
 @app.post("/login")
@@ -977,9 +977,19 @@ def admin(request: Request, msg: str = Query("")):
             "record_count": record_count, "db_exists": db_exists,
             "msg": msg, "session": session, "users": users,
             "email_cfg": email_cfg, "backup_dir_2": backup_dir_2,
-            "flash_pw": flash_pw,
+            "flash_pw": flash_pw, "motd": get_setting("motd", ""),
         },
     )
+
+
+@app.post("/admin/motd")
+def admin_motd(request: Request, motd: str = Form("")):
+    session = get_session(request)
+    if not session or session.get("role") != "admin":
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
+    set_setting("motd", motd.strip())
+    log_action(session["username"], "update_motd", "", f"motd={'set' if motd.strip() else 'cleared'}")
+    return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=MOTD+updated", status_code=303)
 
 
 @app.post("/admin/backup")

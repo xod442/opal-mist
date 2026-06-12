@@ -108,6 +108,29 @@
   }
   .register-link a { color: var(--accent); text-decoration: none; }
   .register-link a:hover { text-decoration: underline; }
+
+  .motd-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.85);
+    border-top: 1px solid var(--border);
+    padding: 7px 0;
+    overflow: hidden;
+  }
+  .motd-track {
+    display: inline-block;
+    white-space: nowrap;
+    animation: ticker 30s linear infinite;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    padding-left: 100vw;
+  }
+  @keyframes ticker {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
 </style>
 </head>
 <body>
@@ -145,6 +168,12 @@
     New here? <a href="{{ rp }}/register">Create an account</a>
   </div>
 </div>
+
+{% if motd %}
+<div class="motd-bar">
+  <div class="motd-track">{{ motd }}</div>
+</div>
+{% endif %}
 
 </body>
 </html>
