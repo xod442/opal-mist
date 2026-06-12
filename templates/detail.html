@@ -179,7 +179,7 @@
       <div class="value">
         {% if c.get_well_plan %}
           {% if c.get_well_plan.startswith('http://') or c.get_well_plan.startswith('https://') %}
-            <a href="{{ c.get_well_plan }}" target="_blank" rel="noopener" style="color:var(--accent);">{{ c.get_well_plan }}</a>
+            <a href="{{ c.get_well_plan }}" target="_blank" rel="noopener" style="color:var(--accent); font-weight:600;">Open Get Well Plan ↗</a>
           {% else %}
             <span style="color:var(--text2); white-space:pre-wrap;">{{ c.get_well_plan }}</span>
           {% endif %}
