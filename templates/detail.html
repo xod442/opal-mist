@@ -69,6 +69,46 @@
   .risk-yes  { color: var(--critical); font-weight: 600; }
   .risk-no   { color: var(--text2); }
   .risk-unsure { color: var(--concerned); }
+
+  .flash { padding: 10px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: 600; }
+  .flash-ok  { background: rgba(0,133,103,0.18); color: #2ad2c9; border: 1px solid rgba(42,210,201,0.4); }
+  .flash-err { background: rgba(255,141,109,0.15); color: var(--critical); border: 1px solid rgba(255,141,109,0.4); }
+
+  /* Email modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.6); align-items: flex-start; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    width: 92%; max-width: 480px; margin-top: 60px; padding: 22px 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .modal h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .modal .sub { font-size: 12px; color: var(--text2); margin-bottom: 16px; }
+  .modal label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text2); margin: 14px 0 6px; }
+  .modal input[type="text"], .modal input[type="search"], .modal textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 9px 11px; font-size: 13px; font-family: inherit;
+  }
+  .modal input:focus, .modal textarea:focus { outline: none; border-color: var(--accent); }
+  .modal textarea { resize: vertical; min-height: 70px; }
+  .user-list { max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; margin-top: 6px; }
+  .user-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; cursor: pointer; border-bottom: 1px solid var(--border); }
+  .user-row:last-child { border-bottom: none; }
+  .user-row:hover { background: rgba(42,210,201,0.08); }
+  .user-row.selected { background: rgba(42,210,201,0.16); }
+  .user-row .uname { font-weight: 600; font-size: 13px; }
+  .user-row .uemail { font-size: 11px; color: var(--text2); margin-left: auto; }
+  .user-row.hidden { display: none; }
+  .no-match { padding: 12px; font-size: 12px; color: var(--text2); font-style: italic; text-align: center; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  .modal-btn { border-radius: 6px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; border: 1px solid var(--border); }
+  .modal-btn.cancel { background: transparent; color: var(--text2); }
+  .modal-btn.cancel:hover { color: var(--text); }
+  .modal-btn.send { background: var(--accent); color: #00322f; border-color: var(--accent); }
+  .modal-btn.send:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -78,9 +118,18 @@
   <a href="{{ rp }}/">← Back to dashboard</a>
   <h1>{{ c.customer_name }}</h1>
   <a class="btn-edit" href="{{ rp }}/customer/{{ c.id }}/edit">Edit</a>
+  <button type="button" class="btn-edit" style="margin-left:8px; cursor:pointer; font-family:inherit;" onclick="openEmailModal()">✉ Email a user</button>
 </header>
 
 <div class="container">
+
+  {% if sent %}
+    {% if sent.startswith('err:') %}
+      <div class="flash flash-err">{{ sent[4:] }}</div>
+    {% else %}
+      <div class="flash flash-ok">{{ sent }}</div>
+    {% endif %}
+  {% endif %}
 
   <span class="badge badge-{{ c.temperature_label }}">{{ c.temperature_label }}</span>
 
@@ -191,5 +240,69 @@
   </div>
 
 </div>
+
+<!-- Email-a-user modal -->
+<div class="modal-overlay" id="emailModal" onclick="if(event.target===this)closeEmailModal()">
+  <form class="modal" method="post" action="{{ rp }}/customer/{{ c.id }}/email" onsubmit="return prepareSend()">
+    <h2>Email a user about this account</h2>
+    <div class="sub">{{ c.customer_name }} — a summary is auto-included; add a note below.</div>
+
+    <input type="hidden" name="recipient" id="recipient">
+
+    <label for="userSearch">Recipient</label>
+    <input type="search" id="userSearch" placeholder="Search by name or email…" autocomplete="off" oninput="filterUsers(this.value)">
+    <div class="user-list" id="userList">
+      {% for u in users %}
+        <div class="user-row" data-email="{{ u.email }}" data-search="{{ (u.username ~ ' ' ~ u.email)|lower }}" onclick="selectUser(this)">
+          <span class="uname">{{ u.username }}</span>
+          <span class="uemail">{{ u.email }}</span>
+        </div>
+      {% else %}
+        <div class="no-match">No active users with an email on file.</div>
+      {% endfor %}
+      <div class="no-match hidden" id="noMatch">No users match your search.</div>
+    </div>
+
+    <label for="note">Note (optional)</label>
+    <textarea name="note" id="note" placeholder="Add context for the recipient…"></textarea>
+
+    <div class="modal-actions">
+      <button type="button" class="modal-btn cancel" onclick="closeEmailModal()">Cancel</button>
+      <button type="submit" class="modal-btn send" id="sendBtn" disabled>Send email</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  function openEmailModal() { document.getElementById('emailModal').classList.add('open'); document.getElementById('userSearch').focus(); }
+  function closeEmailModal() { document.getElementById('emailModal').classList.remove('open'); }
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeEmailModal(); });
+
+  function selectUser(row) {
+    document.querySelectorAll('.user-row').forEach(r => r.classList.remove('selected'));
+    row.classList.add('selected');
+    document.getElementById('recipient').value = row.dataset.email;
+    document.getElementById('sendBtn').disabled = false;
+  }
+
+  function filterUsers(q) {
+    q = q.trim().toLowerCase();
+    var anyVisible = false;
+    document.querySelectorAll('.user-row').forEach(function(r){
+      var match = !q || r.dataset.search.indexOf(q) !== -1;
+      r.classList.toggle('hidden', !match);
+      if (match) anyVisible = true;
+    });
+    document.getElementById('noMatch').classList.toggle('hidden', anyVisible);
+  }
+
+  function prepareSend() {
+    if (!document.getElementById('recipient').value) {
+      alert('Please pick a recipient from the list.');
+      return false;
+    }
+    return true;
+  }
+</script>
 </body>
 </html>

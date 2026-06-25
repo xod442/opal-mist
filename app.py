@@ -12,6 +12,7 @@ import sqlite3
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime
+from urllib.parse import quote_plus
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, Form, Query, Request, UploadFile, File, Depends
@@ -322,19 +323,20 @@ def _make_smtp(host: str, port: int):
     return smtplib.SMTP(host, port, timeout=10)
 
 
-def _smtp_send(cfg: dict, subject: str, body: str):
+def _smtp_send(cfg: dict, subject: str, body: str, to_addr: str = None):
+    to_addr   = to_addr or cfg["to_addr"]
     from_addr = cfg["from_addr"] or cfg["username"]
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"]    = from_addr
-    msg["To"]      = cfg["to_addr"]
+    msg["To"]      = to_addr
     msg.attach(MIMEText(body, "plain"))
     with _make_smtp(cfg["host"], cfg["port"]) as smtp:
         if cfg["port"] != 465:
             smtp.ehlo()
             smtp.starttls()
         smtp.login(cfg["username"], cfg["password"])
-        smtp.sendmail(from_addr, cfg["to_addr"], msg.as_string())
+        smtp.sendmail(from_addr, to_addr, msg.as_string())
 
 
 def send_alert(subject: str, body: str):
@@ -360,6 +362,18 @@ def send_test_email():
         "Opal — Test Email",
         "This is a test email from Opal.\n\nYour SMTP settings are working correctly.",
     )
+
+
+def send_manual_email(to_addr: str, subject: str, body: str):
+    """Send a user-directed email to a chosen recipient. Raises on failure so the
+    sender sees the error. Unlike send_alert, this is an explicit action — it does
+    not require the alerts toggle or the global recipient, only working SMTP creds."""
+    cfg = get_email_config()
+    if not all([cfg["host"], cfg["username"], cfg["password"]]):
+        raise ValueError("Email is not configured — set SMTP host, username, and password on the Admin page first.")
+    if not to_addr:
+        raise ValueError("No recipient selected.")
+    _smtp_send(cfg, subject, body, to_addr=to_addr)
 
 
 # ── Backup helpers ────────────────────────────────────────────────────────────
@@ -709,11 +723,76 @@ def detail(request: Request, customer_id: int):
         return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     customer = conn.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
+    users = conn.execute(
+        "SELECT username, email FROM users WHERE is_active = 1 AND email IS NOT NULL AND email != '' ORDER BY username"
+    ).fetchall()
     conn.close()
     if not customer:
         return HTMLResponse("Not found", status_code=404)
     return templates.TemplateResponse(request=request, name="detail.html",
-                                      context={"c": customer, "session": session})
+                                      context={"c": customer, "session": session,
+                                               "users": users,
+                                               "sent": request.query_params.get("sent", "")})
+
+
+@app.post("/customer/{customer_id}/email")
+def email_user(
+    request: Request,
+    customer_id: int,
+    recipient: str = Form(""),
+    note: str = Form(""),
+):
+    session = get_session(request)
+    if not session:
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
+
+    conn = get_db()
+    c = conn.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
+    recipient = recipient.strip()
+    # Only allow sending to a known, active user's address — never an arbitrary input.
+    valid = conn.execute(
+        "SELECT username FROM users WHERE email = ? AND is_active = 1 AND email != ''",
+        (recipient,),
+    ).fetchone()
+    conn.close()
+
+    if not c:
+        return HTMLResponse("Not found", status_code=404)
+    if not recipient or not valid:
+        return RedirectResponse(
+            url=f"{ROOT_PATH}/customer/{customer_id}?sent=err:Pick+a+valid+recipient.",
+            status_code=303)
+
+    base = str(request.base_url).rstrip("/") + ROOT_PATH
+    record_url = f"{base}/customer/{customer_id}"
+
+    subject = f"[Opal] {c['temperature_label']} — {c['customer_name']}"
+    lines = [
+        f"{session['username']} flagged this customer in Opal-Mist:",
+        "",
+        f"  Customer:        {c['customer_name'] or '—'}",
+        f"  Heat level:      {c['temperature_label'] or '—'}",
+        f"  Actively at risk: {c['at_risk'] or '—'}",
+        f"  Account Manager: {c['account_manager'] or '—'}",
+        f"  Sales Engineer:  {c['sales_engineer'] or '—'}",
+        f"  Location:        {c['location'] or '—'}",
+        f"  Risk reasons:    {c['risk_reasons'] or 'None specified'}",
+    ]
+    if note.strip():
+        lines += ["", f"Note from {session['username']}:", note.strip()]
+    lines += ["", f"View the full record: {record_url}", "", "— Opal-Mist"]
+    body = "\n".join(lines)
+
+    try:
+        send_manual_email(recipient, subject, body)
+    except Exception as e:
+        msg = quote_plus(f"err:Send failed — {e}")
+        return RedirectResponse(url=f"{ROOT_PATH}/customer/{customer_id}?sent={msg}", status_code=303)
+
+    log_action(session["username"], "email_user", c["customer_name"],
+               f"to={valid['username']} <{recipient}>")
+    msg = quote_plus(f"Email sent to {valid['username']}.")
+    return RedirectResponse(url=f"{ROOT_PATH}/customer/{customer_id}?sent={msg}", status_code=303)
 
 
 # ── Edit ──────────────────────────────────────────────────────────────────────
