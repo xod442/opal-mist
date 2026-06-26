@@ -965,6 +965,24 @@ def stale(request: Request):
                                       context={"customers": customers, "session": session})
 
 
+@app.get("/unsponsored", response_class=HTMLResponse)
+def unsponsored(request: Request):
+    session = get_session(request)
+    if not session:
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
+    conn = get_db()
+    # Accounts missing a BU PLM sponsor OR a BU TME sponsor (at least one gap).
+    customers = conn.execute("""
+        SELECT * FROM customers
+        WHERE COALESCE(TRIM(bu_plm_sponsor), '') = ''
+           OR COALESCE(TRIM(bu_tme_sponsor), '') = ''
+        ORDER BY temperature_order ASC, customer_name ASC
+    """).fetchall()
+    conn.close()
+    return templates.TemplateResponse(request=request, name="unsponsored.html",
+                                      context={"customers": customers, "session": session})
+
+
 # ── Executive Overview ────────────────────────────────────────────────────────
 
 @app.get("/executive", response_class=HTMLResponse)
