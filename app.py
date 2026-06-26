@@ -1023,7 +1023,7 @@ def executive(request: Request):
 # ── Admin ─────────────────────────────────────────────────────────────────────
 
 @app.get("/admin", response_class=HTMLResponse)
-def admin(request: Request, msg: str = Query("")):
+def admin(request: Request, msg: str = Query(""), error: str = Query("")):
     session = get_session(request)
     if not session:
         return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
@@ -1055,7 +1055,7 @@ def admin(request: Request, msg: str = Query("")):
         context={
             "backups": list_backups(), "db_size": db_size,
             "record_count": record_count, "db_exists": db_exists,
-            "msg": msg, "session": session, "users": users,
+            "msg": msg, "error": error, "session": session, "users": users,
             "email_cfg": email_cfg, "backup_dir_2": backup_dir_2,
             "flash_pw": flash_pw, "motd": get_setting("motd", ""),
         },
@@ -1100,6 +1100,18 @@ async def admin_upload(request: Request, file: UploadFile = File(...)):
         return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     content = await file.read()
     text = content.decode("utf-8-sig")
+
+    # Guard: a headerless or wrong-format CSV would otherwise ingest silently
+    # (DictReader treats the first data row as the header → zero rows processed,
+    # no error). Require the Forms header before we touch the DB.
+    header = {h.strip() for h in next(csv.reader(io.StringIO(text)), [])}
+    if not {"ID", "Customer Name"}.issubset(header):
+        return RedirectResponse(
+            url=f"{ROOT_PATH}/admin?error=" + quote_plus(
+                "No records ingested — the CSV is missing the Microsoft Forms header row "
+                "(expected columns including ID and Customer Name). Nothing was imported."),
+            status_code=303)
+
     inserted, skipped_dup, skipped_mist, new_critical = ingest_fileobj(io.StringIO(text))
     log_action(session["username"], "upload_csv", file.filename,
                f"{inserted} inserted, {skipped_dup} duplicates, {skipped_mist} non-Mist skipped")
