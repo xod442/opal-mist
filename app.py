@@ -971,11 +971,11 @@ def unsponsored(request: Request):
     if not session:
         return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
-    # Accounts missing a BU PLM sponsor OR a BU TME sponsor (at least one gap).
+    # Accounts with NO BU PLM sponsor AND NO BU TME sponsor (completely unsponsored).
     customers = conn.execute("""
         SELECT * FROM customers
         WHERE COALESCE(TRIM(bu_plm_sponsor), '') = ''
-           OR COALESCE(TRIM(bu_tme_sponsor), '') = ''
+          AND COALESCE(TRIM(bu_tme_sponsor), '') = ''
         ORDER BY temperature_order ASC, customer_name ASC
     """).fetchall()
     conn.close()

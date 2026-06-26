@@ -97,7 +97,7 @@
   <div class="page-title">Accounts Without BU Sponsor Coverage
     <span class="count-pill">{{ customers|length }}</span>
   </div>
-  <div class="page-sub">Accounts missing a BU PLM sponsor and/or a BU TME sponsor, sorted by heat. Missing sponsors are flagged in red.</div>
+  <div class="page-sub">Accounts with no BU PLM sponsor and no BU TME sponsor — completely unsponsored — sorted by heat.</div>
 
   {% if customers %}
   <div class="table-wrap">
@@ -143,7 +143,7 @@
     </table>
   </div>
   {% else %}
-  <div class="empty">🎉 Every account has both a BU PLM and BU TME sponsor assigned.</div>
+  <div class="empty">🎉 Every account has at least one BU sponsor (PLM or TME) assigned.</div>
   {% endif %}
 
 </div>
