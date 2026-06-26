@@ -34,6 +34,13 @@
   .page-sub { color: var(--text2); font-size: 13px; margin-bottom: 28px; }
   .count-pill { display:inline-block; margin-left:10px; font-size:13px; font-weight:700; color:var(--accent); background:rgba(42,210,201,0.12); border:1px solid rgba(42,210,201,0.4); border-radius:20px; padding:1px 12px; vertical-align:middle; }
 
+  .filters { display: flex; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; align-items: center; }
+  .filters input { flex: 1; min-width: 240px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 9px 12px; font-size: 13px; }
+  .filters input:focus { outline: none; border-color: var(--accent); }
+  .filters button { background: var(--accent); color: #00322f; border: none; border-radius: 6px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .filters a.clear { color: var(--text2); text-decoration: none; font-size: 13px; }
+  .filters a.clear:hover { color: var(--text); }
+
   .heat-badge {
     display: inline-block;
     padding: 2px 9px;
@@ -99,6 +106,12 @@
   </div>
   <div class="page-sub">Accounts with no BU PLM sponsor and no BU TME sponsor — completely unsponsored — sorted by heat.</div>
 
+  <form class="filters" method="get">
+    <input type="text" name="custodian" placeholder="Search by customer custodian..." value="{{ custodian|default('') }}">
+    <button type="submit">Search</button>
+    {% if custodian %}<a class="clear" href="{{ rp }}/unsponsored">Clear</a>{% endif %}
+  </form>
+
   {% if customers %}
   <div class="table-wrap">
     <table>
@@ -116,7 +129,7 @@
         <tr>
           <td>
             <div class="cust-name">{{ c.customer_name }}</div>
-            <div class="cust-meta">{{ c.location }} &nbsp;·&nbsp; AM: {{ c.account_manager or '—' }}</div>
+            <div class="cust-meta">{{ c.location }} &nbsp;·&nbsp; AM: {{ c.account_manager or '—' }}{% if c.custodian and c.custodian.strip() %} &nbsp;·&nbsp; Custodian: {{ c.custodian }}{% endif %}</div>
           </td>
           <td><span class="heat-badge badge-{{ c.temperature_label }}">{{ c.temperature_label }}</span></td>
           <td>
@@ -143,7 +156,9 @@
     </table>
   </div>
   {% else %}
-  <div class="empty">🎉 Every account has at least one BU sponsor (PLM or TME) assigned.</div>
+  <div class="empty">
+    {% if custodian %}No unsponsored accounts match custodian “{{ custodian }}”.{% else %}🎉 Every account has at least one BU sponsor (PLM or TME) assigned.{% endif %}
+  </div>
   {% endif %}
 
 </div>

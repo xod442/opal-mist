@@ -966,21 +966,28 @@ def stale(request: Request):
 
 
 @app.get("/unsponsored", response_class=HTMLResponse)
-def unsponsored(request: Request):
+def unsponsored(request: Request, custodian: str = Query("")):
     session = get_session(request)
     if not session:
         return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
-    # Accounts with NO BU PLM sponsor AND NO BU TME sponsor (completely unsponsored).
-    customers = conn.execute("""
+    # Accounts with NO BU PLM sponsor AND NO BU TME sponsor (completely unsponsored),
+    # optionally narrowed to a matching customer custodian.
+    sql = """
         SELECT * FROM customers
         WHERE COALESCE(TRIM(bu_plm_sponsor), '') = ''
           AND COALESCE(TRIM(bu_tme_sponsor), '') = ''
-        ORDER BY temperature_order ASC, customer_name ASC
-    """).fetchall()
+    """
+    params = []
+    if custodian:
+        sql += " AND custodian LIKE ?"
+        params.append(f"%{custodian}%")
+    sql += " ORDER BY temperature_order ASC, customer_name ASC"
+    customers = conn.execute(sql, params).fetchall()
     conn.close()
     return templates.TemplateResponse(request=request, name="unsponsored.html",
-                                      context={"customers": customers, "session": session})
+                                      context={"customers": customers, "session": session,
+                                               "custodian": custodian})
 
 
 # ── Executive Overview ────────────────────────────────────────────────────────
