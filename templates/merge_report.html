@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merge Dry Run — Opal-Mist</title>
+<style>
+  :root {
+    --bg: #000000; --surface: #425563; --surface2: #80746e; --border: rgba(198,201,202,0.25);
+    --text: #e1e1e1; --text2: #c6c9ca; --accent: #2ad2c9;
+    --critical: #ff8d6d; --ok: #01a982;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; gap: 16px; }
+  header a { color: var(--accent); text-decoration: none; font-size: 13px; }
+  header a:hover { text-decoration: underline; }
+  header h1 { font-size: 18px; font-weight: 700; }
+  .container { padding: 32px 40px; max-width: 900px; }
+  .page-title { font-size: 24px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.3px; }
+  .page-sub { color: var(--text2); font-size: 13px; margin-bottom: 24px; }
+
+  .verdict { padding: 14px 18px; border-radius: 10px; font-weight: 700; margin-bottom: 24px; font-size: 15px; }
+  .verdict-ok  { background: rgba(1,169,130,0.14); color: var(--ok); border: 1px solid rgba(1,169,130,0.4); }
+  .verdict-warn{ background: rgba(255,141,109,0.12); color: var(--critical); border: 1px solid rgba(255,141,109,0.4); }
+  .verdict-err { background: rgba(255,141,109,0.16); color: var(--critical); border: 1px solid rgba(255,141,109,0.5); }
+
+  .section { margin-bottom: 26px; }
+  .section h2 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text2); margin-bottom: 10px; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .stat .n { font-size: 26px; font-weight: 800; }
+  .stat .l { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text2); }
+  .stat.accent .n { color: var(--accent); }
+
+  ul.events { list-style: none; }
+  ul.events li { padding: 9px 0 9px 26px; position: relative; border-bottom: 1px solid var(--border); font-size: 13px; }
+  ul.events li:last-child { border-bottom: none; }
+  ul.events li::before { content: "→"; position: absolute; left: 4px; color: var(--accent); font-weight: 700; }
+  ul.warn li::before { content: "⚠"; color: var(--critical); }
+
+  table { width: 100%; border-collapse: collapse; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  th, td { padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+  th { background: var(--surface2); color: var(--text2); font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; }
+  tr:last-child td { border-bottom: none; }
+
+  .note { color: var(--text2); font-size: 12px; font-style: italic; margin-top: 20px; }
+  a.btn { display:inline-block; margin-top: 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 16px; color: var(--text); font-size: 13px; font-weight: 600; text-decoration: none; }
+  a.btn:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <a href="{{ rp }}/admin">← Admin</a>
+  <h1>Database Merge — Dry Run</h1>
+</header>
+
+<div class="container">
+  <div class="page-title">Merge Dry Run Report</div>
+  <div class="page-sub">Read-only analysis. Nothing was written to either database.</div>
+
+  {% if error %}
+    <div class="verdict verdict-err">⚠ {{ error }}</div>
+    <a class="btn" href="{{ rp }}/admin">Back to Admin</a>
+  {% else %}
+
+    {% if report.ok and not report.warnings %}
+      <div class="verdict verdict-ok">✓ Safe to merge — clean insert, no collisions.</div>
+    {% elif report.ok %}
+      <div class="verdict verdict-warn">⚠ Mergeable, with decisions to confirm (see below).</div>
+    {% else %}
+      <div class="verdict verdict-err">⚠ Not a clean merge — collisions must be resolved first.</div>
+    {% endif %}
+
+    <div class="section">
+      <h2>Summary</h2>
+      <div class="stats">
+        <div class="stat"><div class="n">{{ report.this_count }}</div><div class="l">This DB</div></div>
+        <div class="stat"><div class="n">{{ report.other_count }}</div><div class="l">Uploaded ({{ report.other_name }})</div></div>
+        <div class="stat accent"><div class="n">{{ report.merged_total }}</div><div class="l">Merged total</div></div>
+        <div class="stat"><div class="n">{{ report.total_mist }}</div><div class="l">Tagged Mist</div></div>
+        <div class="stat"><div class="n">{{ report.total_central }}</div><div class="l">Tagged Central</div></div>
+        <div class="stat"><div class="n">{{ report.id_overlap|length }}</div><div class="l">ID collisions</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Events that would occur</h2>
+      <ul class="events">
+        {% for e in report.events %}<li>{{ e }}</li>{% endfor %}
+      </ul>
+    </div>
+
+    {% if report.warnings %}
+    <div class="section">
+      <h2>Decisions / warnings</h2>
+      <ul class="events warn">
+        {% for w in report.warnings %}<li>{{ w }}</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="section">
+      <h2>Side tables (rows: this / uploaded)</h2>
+      <table>
+        <thead><tr><th>Table</th><th>This DB</th><th>Uploaded</th></tr></thead>
+        <tbody>
+          {% for t, pair in report.side_tables.items() %}
+          <tr><td>{{ t }}</td><td>{{ pair[0] }}</td><td>{{ pair[1] }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">This report is a simulation. No records were inserted, updated, or deleted in either database.</div>
+    <a class="btn" href="{{ rp }}/admin">Back to Admin</a>
+  {% endif %}
+</div>
+</body>
+</html>

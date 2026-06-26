@@ -9,6 +9,7 @@ import secrets
 import shutil
 import smtplib
 import sqlite3
+import tempfile
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime
@@ -374,6 +375,97 @@ def send_manual_email(to_addr: str, subject: str, body: str):
     if not to_addr:
         raise ValueError("No recipient selected.")
     _smtp_send(cfg, subject, body, to_addr=to_addr)
+
+
+# ── Merge dry-run helpers ──────────────────────────────────────────────────────
+
+def _ro_conn(path):
+    # Strictly read-only — this analysis must never alter either database.
+    return sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+
+
+def _has_table(conn, name):
+    return conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)
+    ).fetchone() is not None
+
+
+def analyze_merge(other_path):
+    """Read-only dry run of merging this app's database with another Opal
+    database. Writes nothing to either DB. Returns a report dict describing
+    exactly what a real merge would do, plus any collisions to resolve."""
+    rpt = {"events": [], "warnings": [], "ok": True}
+    this = _ro_conn(DB_PATH)
+    other = _ro_conn(other_path)
+    try:
+        if not (_has_table(this, "customers") and _has_table(other, "customers")):
+            raise ValueError("uploaded file has no 'customers' table")
+
+        this_ids = {r[0] for r in this.execute("SELECT id FROM customers")}
+        other_ids = {r[0] for r in other.execute("SELECT id FROM customers")}
+        rpt["this_count"] = len(this_ids)
+        rpt["other_count"] = len(other_ids)
+        overlap = sorted(this_ids & other_ids)
+        rpt["id_overlap"] = overlap
+        rpt["merged_total"] = len(this_ids | other_ids)
+
+        def split(conn):
+            rows = conn.execute("""
+                SELECT CASE WHEN LOWER(TRIM(COALESCE(architecture,''))) LIKE 'mist%'
+                            THEN 'mist' ELSE 'central' END AS seg, COUNT(*)
+                FROM customers GROUP BY seg
+            """).fetchall()
+            d = {"mist": 0, "central": 0}
+            d.update({s: n for s, n in rows})
+            return d
+        rpt["this_split"] = split(this)
+        rpt["other_split"] = split(other)
+        rpt["total_mist"] = rpt["this_split"]["mist"] + rpt["other_split"]["mist"]
+        rpt["total_central"] = rpt["this_split"]["central"] + rpt["other_split"]["central"]
+
+        def users(conn):
+            if not _has_table(conn, "users"):
+                return set()
+            return {r[0] for r in conn.execute("SELECT username FROM users")}
+        tu, ou = users(this), users(other)
+        rpt["other_users"] = sorted(ou)
+        rpt["user_collisions"] = sorted(tu & ou)
+
+        rpt["side_tables"] = {}
+        for t in ("settings", "audit_log", "heat_history", "users"):
+            tc = this.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] if _has_table(this, t) else 0
+            oc = other.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] if _has_table(other, t) else 0
+            rpt["side_tables"][t] = (tc, oc)
+
+        # Narrative of what a real merge would do.
+        rpt["events"].append(
+            f"Combine customers: {rpt['this_count']} (this database) + "
+            f"{rpt['other_count']} (uploaded) → {rpt['merged_total']} total records.")
+        rpt["events"].append(
+            f"Derive segment tags from architecture → Mist: {rpt['total_mist']}, "
+            f"Central: {rpt['total_central']}.")
+        if overlap:
+            rpt["ok"] = False
+            rpt["warnings"].append(
+                f"{len(overlap)} customer ID collision(s) — a straight insert would lose "
+                f"rows; the merge would need an ID remap. First few: {overlap[:20]}")
+        else:
+            rpt["events"].append(
+                "Customer IDs are disjoint — clean insert, no ID remap, no data lost "
+                "(all engagement fields and notes preserved).")
+        if rpt["user_collisions"]:
+            rpt["warnings"].append(
+                f"Username(s) present in both databases: {rpt['user_collisions']} — on merge "
+                "the existing (this database's) row is kept and the uploaded one skipped.")
+            rpt["events"].append(
+                f"Users: import {len(ou)} uploaded account(s), skipping "
+                f"{len(rpt['user_collisions'])} that already exist here.")
+        else:
+            rpt["events"].append(f"Users: import {len(ou)} uploaded account(s); no collisions.")
+        return rpt
+    finally:
+        this.close()
+        other.close()
 
 
 # ── Backup helpers ────────────────────────────────────────────────────────────
@@ -1250,6 +1342,36 @@ async def admin_upload_engagement(request: Request, file: UploadFile = File(...)
         more = f"+%28and+{skipped - 5}+more%29" if skipped > 5 else ""
         msg += f"%2C+{skipped}+skipped+(no+match)%3A+{names}{more}"
     return RedirectResponse(url=f"{ROOT_PATH}/admin?msg={msg}", status_code=303)
+
+
+@app.post("/admin/merge-dryrun")
+async def admin_merge_dryrun(request: Request, file: UploadFile = File(...)):
+    session = get_session(request)
+    if not session or session.get("role") != "admin":
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
+
+    data = await file.read()
+    # Write the upload to a temp file so SQLite can open it read-only. Nothing
+    # is ever written back to either database.
+    tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+    try:
+        tmp.write(data)
+        tmp.flush()
+        tmp.close()
+        try:
+            report = analyze_merge(tmp.name)
+            report["other_name"] = file.filename
+            error = None
+        except Exception as e:
+            report = None
+            error = f"Could not analyze “{file.filename}”: {e}. Is it a valid Opal database file?"
+        log_action(session["username"], "merge_dryrun", file.filename or "",
+                   "ok" if report and report.get("ok") else "warnings/error")
+        return templates.TemplateResponse(
+            request=request, name="merge_report.html",
+            context={"session": session, "report": report, "error": error})
+    finally:
+        os.unlink(tmp.name)
 
 
 @app.get("/admin/export")

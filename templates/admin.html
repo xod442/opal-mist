@@ -311,6 +311,19 @@
     <a class="btn btn-outline" href="{{ rp }}/admin/export">Download CSV</a>
   </div>
 
+  <div class="section">
+    <h2>Database Merge — Dry Run</h2>
+    <p>Upload the other Opal database file (e.g. <code>opal.db</code>) to simulate merging it
+       with this one. Read-only: it generates a report of what a merge would do — combined record
+       counts, ID collisions, and user conflicts — without changing either database.</p>
+    <form method="post" action="{{ rp }}/admin/merge-dryrun" enctype="multipart/form-data">
+      <div class="upload-area">
+        <input type="file" name="file" accept=".db,.sqlite,.sqlite3" required>
+      </div>
+      <button class="btn" type="submit" style="margin-top:10px;">Run Dry Run</button>
+    </form>
+  </div>
+
   <!-- Restore from backup -->
   <div class="section">
     <h2>Restore from Backup</h2>
