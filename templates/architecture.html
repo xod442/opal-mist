@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deployed Architecture — Opal-Mist</title>
+<style>
+  :root {
+    --bg: #000000; --surface: #425563; --surface2: #80746e; --border: rgba(198,201,202,0.25);
+    --text: #e1e1e1; --text2: #c6c9ca; --accent: #2ad2c9;
+    --critical: #ff8d6d; --hot: #614767; --concerned: #80746e; --stable: #008567;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header img { height: 36px; flex-shrink: 0; }
+  header a { color: var(--accent); text-decoration: none; font-size: 13px; }
+  header a:hover { text-decoration: underline; }
+  .header-title h1 { font-size: 18px; font-weight: 700; }
+  .header-title .acronym { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .header-title .acronym span { color: var(--accent); }
+
+  .container { padding: 32px 40px; max-width: 1100px; }
+
+  .page-title { font-size: 24px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.3px; }
+  .page-sub { color: var(--text2); font-size: 13px; margin-bottom: 24px; }
+
+  /* Search box */
+  .search-row { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+  .search-row input[type=text] {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 9px 14px; font-size: 14px; min-width: 280px;
+  }
+  .search-row input[type=text]::placeholder { color: var(--text2); }
+  .btn {
+    background: var(--accent); color: #00211f; border: none; border-radius: 8px;
+    padding: 9px 18px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn-clear { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-clear:hover { color: var(--text); border-color: var(--text2); }
+
+  /* Quick-filter chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text2);
+    border-radius: 20px; padding: 5px 13px; font-size: 12px; text-decoration: none;
+    white-space: nowrap;
+  }
+  .chip:hover { color: var(--text); border-color: var(--text2); }
+  .chip .n { background: rgba(0,0,0,0.25); color: var(--text2); border-radius: 10px; padding: 0 7px; font-size: 11px; font-weight: 700; }
+  .chip.active { background: var(--accent); color: #00211f; border-color: var(--accent); font-weight: 700; }
+  .chip.active .n { background: rgba(0,0,0,0.18); color: #00211f; }
+
+  .result-count { color: var(--text2); font-size: 13px; margin-bottom: 14px; }
+  .result-count strong { color: var(--text); }
+
+  .heat-badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .badge-Critical  { background: rgba(255,141,109,0.12);  color: var(--critical); border: 1px solid rgba(255,141,109,0.3); }
+  .badge-Hot       { background: rgba(97,71,103,0.6);  color: #e1e1e1;          border: 1px solid #614767; }
+  .badge-Concerned { background: rgba(128,116,110,0.12);  color: var(--concerned);border: 1px solid rgba(128,116,110,0.3); }
+  .badge-Stable    { background: rgba(0,133,103,0.12);  color: var(--stable);   border: 1px solid rgba(0,133,103,0.3); }
+  .badge-Happy     { background: rgba(0,133,103,0.12);  color: var(--stable);   border: 1px solid rgba(0,133,103,0.3); }
+
+  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--surface2); color: var(--text2); font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px; padding: 11px 16px; text-align: left;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .cust-name { font-weight: 600; }
+  .cust-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  /* Architecture pills inside the table */
+  .arch-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .arch-pill {
+    display: inline-block; background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    color: var(--text2); border-radius: 6px; padding: 2px 9px; font-size: 12px; white-space: nowrap;
+  }
+  .arch-pill.match { background: rgba(42,210,201,0.16); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+
+  a.link { color: var(--accent); text-decoration: none; font-size: 12px; font-weight: 500; }
+  a.link:hover { text-decoration: underline; }
+  a.edit-link { color: var(--text2); text-decoration: none; font-size: 12px; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; margin-left: 6px; }
+  a.edit-link:hover { color: var(--text); border-color: var(--text2); }
+
+  .empty { padding: 40px; text-align: center; color: var(--text2); }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="{{ rp }}/static/hpelogo.png" alt="HPE">
+  <a href="{{ rp }}/">← Dashboard</a>
+  <div class="header-title">
+    <h1>Opal-Mist — Deployed Architecture</h1>
+    <div class="acronym">
+      <span>M</span>ist Customer Risk Dashboard
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="page-title">Deployed Architecture</div>
+  <div class="page-sub">Search every customer by the technology they are running <em>today</em>. Type a term (e.g. <strong>AOS 8</strong>) or click a tag below.</div>
+
+  <form class="search-row" method="get" action="{{ rp }}/architecture">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search architecture — e.g. AOS 8, CX Switching, Mist…" autofocus>
+    <button class="btn" type="submit">Search</button>
+    {% if q %}<a class="btn btn-clear" href="{{ rp }}/architecture">Clear</a>{% endif %}
+  </form>
+
+  <div class="chips">
+    {% for t in tokens %}
+    <a class="chip {% if t.name|lower == q|lower %}active{% endif %}" href="{{ rp }}/architecture?q={{ t.name|urlencode }}">
+      {{ t.name }} <span class="n">{{ t.count }}</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="result-count">
+    {% if q %}<strong>{{ total }}</strong> customer{% if total != 1 %}s{% endif %} running <strong>“{{ q }}”</strong>
+    {% else %}<strong>{{ total }}</strong> customer{% if total != 1 %}s{% endif %} total{% endif %}
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Heat</th>
+          <th>Deployed Architecture</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in customers %}
+        <tr>
+          <td>
+            <div class="cust-name">{{ c.customer_name }}</div>
+            <div class="cust-meta">{{ c.location or '—' }} &nbsp;·&nbsp; AM: {{ c.account_manager or '—' }}{% if c.sales_engineer %} &nbsp;·&nbsp; SE: {{ c.sales_engineer }}{% endif %}</div>
+          </td>
+          <td><span class="heat-badge badge-{{ c.temperature_label }}">{{ c.temperature_label }}</span></td>
+          <td>
+            {% if c.arch_tokens %}
+            <div class="arch-pills">
+              {% for tok in c.arch_tokens %}
+              <span class="arch-pill {% if tok.match %}match{% endif %}">{{ tok.name }}</span>
+              {% endfor %}
+            </div>
+            {% else %}
+            <span style="color:var(--text2); font-size:12px;">—</span>
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;">
+            <a class="link" href="{{ rp }}/customer/{{ c.id }}">Details →</a>
+            <a class="edit-link" href="{{ rp }}/customer/{{ c.id }}/edit">Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not customers %}
+        <tr><td colspan="4" class="empty">No customers match “{{ q }}”.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>

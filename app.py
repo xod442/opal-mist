@@ -1082,6 +1082,62 @@ def unsponsored(request: Request, custodian: str = Query("")):
                                                "custodian": custodian})
 
 
+@app.get("/architecture", response_class=HTMLResponse)
+def architecture(request: Request, q: str = Query("")):
+    session = get_session(request)
+    if not session:
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
+    conn = get_db()
+
+    # The architecture field is a semicolon-delimited multi-value field
+    # (e.g. "AOS 8 MM;AOS10 with Gateway;CX Switching;"). Build a catalog of
+    # distinct technology tokens with a count of how many customers run each,
+    # for the quick-filter chips.
+    token_counts = {}
+    for (arch,) in conn.execute(
+        "SELECT architecture FROM customers WHERE architecture IS NOT NULL AND TRIM(architecture) != ''"
+    ).fetchall():
+        seen = set()
+        for tok in arch.split(";"):
+            tok = tok.replace("\xa0", " ").strip()
+            if tok and tok not in seen:
+                seen.add(tok)
+                token_counts[tok] = token_counts.get(tok, 0) + 1
+    tokens = [{"name": name, "count": count}
+              for name, count in sorted(token_counts.items(), key=lambda kv: (-kv[1], kv[0].lower()))]
+
+    # Filter customers by a substring match on the architecture field, so a
+    # search for "AOS 8" matches "AOS 8 MM", "AOS 8.0 IAP", etc.
+    sql = "SELECT * FROM customers"
+    params = []
+    if q:
+        sql += " WHERE architecture LIKE ?"
+        params.append(f"%{q}%")
+    sql += " ORDER BY temperature_order ASC, customer_name ASC"
+    result = conn.execute(sql, params).fetchall()
+    conn.close()
+
+    # Pre-split each customer's architecture into clean tokens and flag the
+    # ones that match the active search so the template can highlight them.
+    qlow = q.strip().lower()
+    rows = []
+    for c in result:
+        d = dict(c)
+        toks = []
+        for tok in (d.get("architecture") or "").split(";"):
+            tok = tok.replace("\xa0", " ").strip()
+            if tok:
+                toks.append({"name": tok, "match": bool(qlow) and qlow in tok.lower()})
+        d["arch_tokens"] = toks
+        rows.append(d)
+
+    return templates.TemplateResponse(
+        request=request, name="architecture.html",
+        context={"customers": rows, "session": session,
+                 "q": q, "tokens": tokens, "total": len(rows)},
+    )
+
+
 # ── Executive Overview ────────────────────────────────────────────────────────
 
 @app.get("/executive", response_class=HTMLResponse)
