@@ -22,6 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from passlib.context import CryptContext
+from cryptography.fernet import Fernet, InvalidToken
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,52 @@ templates.env.globals["rp"] = ROOT_PATH
 
 pwd_ctx    = CryptContext(schemes=["bcrypt"], deprecated="auto")
 serializer = URLSafeTimedSerializer(SECRET_KEY)
+
+# ── Secret encryption (Fernet) ──────────────────────────────────
+# Sensitive settings (currently the SMTP password) are encrypted at rest with
+# Fernet. The key is taken from OPAL_FERNET_KEY if set, otherwise it is generated
+# once and persisted next to the database. KEEP THIS KEY SAFE and include it in
+# your backups — losing it makes the encrypted secrets unrecoverable.
+FERNET_KEY_PATH = os.getenv("FERNET_KEY_PATH", os.path.join(os.path.dirname(__file__), "data", "secret.key"))
+
+
+def _load_fernet() -> Fernet:
+    key = os.getenv("OPAL_FERNET_KEY", "").strip()
+    if not key:
+        if os.path.exists(FERNET_KEY_PATH):
+            with open(FERNET_KEY_PATH) as f:
+                key = f.read().strip()
+        else:
+            key = Fernet.generate_key().decode()
+            os.makedirs(os.path.dirname(FERNET_KEY_PATH), exist_ok=True)
+            with open(FERNET_KEY_PATH, "w") as f:
+                f.write(key)
+            try:
+                os.chmod(FERNET_KEY_PATH, 0o600)
+            except OSError:
+                pass
+    return Fernet(key.encode())
+
+
+fernet = _load_fernet()
+
+
+def encrypt_secret(plaintext: str) -> str:
+    """Encrypt a secret for storage. Empty stays empty."""
+    if not plaintext:
+        return ""
+    return fernet.encrypt(plaintext.encode()).decode()
+
+
+def decrypt_secret(token: str) -> str:
+    """Decrypt a stored secret. Legacy plaintext values (stored before encryption
+    was added) are returned unchanged so nothing breaks during migration."""
+    if not token:
+        return ""
+    try:
+        return fernet.decrypt(token.encode()).decode()
+    except InvalidToken:
+        return token
 
 TEMP_ORDER = {
     "Critical - We are at risk of losing them as a customer": 1,
@@ -211,6 +258,16 @@ def migrate_db():
           AND temperature_label != 'Critical'
     """)
 
+    # One-time migration: encrypt the SMTP password if it is still stored as
+    # plaintext (i.e. written before Fernet encryption was added).
+    row = conn.execute("SELECT value FROM settings WHERE key = 'email_password'").fetchone()
+    if row and row[0]:
+        try:
+            fernet.decrypt(row[0].encode())  # already encrypted → leave as-is
+        except InvalidToken:
+            conn.execute("UPDATE settings SET value = ? WHERE key = 'email_password'",
+                         (encrypt_secret(row[0]),))
+
     conn.commit()
     conn.close()
 
@@ -310,7 +367,7 @@ def get_email_config() -> dict:
         "host":      get_setting("email_smtp_host"),
         "port":      int(get_setting("email_smtp_port") or "587"),
         "username":  get_setting("email_username"),
-        "password":  get_setting("email_password"),
+        "password":  decrypt_secret(get_setting("email_password")),
         "from_addr": get_setting("email_from"),
         "to_addr":   get_setting("email_to"),
     }
@@ -1766,7 +1823,7 @@ def admin_email_settings(
         set_setting(key, value)
     # Only update password if one was provided (blank = keep existing)
     if email_password:
-        set_setting("email_password", email_password)
+        set_setting("email_password", encrypt_secret(email_password))
     log_action(session["username"], "update_email_settings", "",
                f"enabled={email_alerts_enabled}, host={email_smtp_host}, to={email_to}")
     return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Email+settings+saved", status_code=303)

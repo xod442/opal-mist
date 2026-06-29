@@ -6,3 +6,11 @@ opal.db
 __pycache__/
 *.pyc
 .DS_Store
+
+# Fernet encryption key — NEVER commit
+data/secret.key
+*.key
+
+# Local secrets — never commit
+.env
+!.env.example
