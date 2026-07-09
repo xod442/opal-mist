@@ -240,6 +240,38 @@
     </div>
   </div>
 
+  <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text2); margin:8px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--border);">Attachments</div>
+
+  {% if attachments %}
+  <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+    {% for a in attachments %}
+    <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid var(--border); border-radius:8px;">
+      <a href="{{ rp }}/customer/{{ c.id }}/attachments/{{ a.id }}/download"
+         {% if a.filename.lower().endswith(('.pdf', '.png', '.jpg', '.jpeg')) %}target="_blank" rel="noopener"{% endif %}
+         style="color:var(--accent); font-weight:600; text-decoration:none; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📎 {{ a.filename }}</a>
+      <span style="color:var(--text2); font-size:12px; white-space:nowrap;">{% if a.size_bytes >= 1048576 %}{{ (a.size_bytes / 1048576) | round(1) }} MB{% else %}{{ (a.size_bytes / 1024) | round(1) }} KB{% endif %}</span>
+      <span style="color:var(--text2); font-size:12px; white-space:nowrap;">{{ a.uploaded_by or '—' }}</span>
+      <span style="color:var(--text2); font-size:12px; white-space:nowrap;">{{ a.uploaded_at[:10] }}</span>
+      {% if session.role == 'admin' or a.uploaded_by == session.username %}
+      <form method="post" action="{{ rp }}/customer/{{ c.id }}/attachments/{{ a.id }}/delete"
+            onsubmit="return confirm('Delete {{ a.filename }}?');" style="margin:0;">
+        <button type="submit" style="background:none; border:1px solid var(--border); color:var(--text2); border-radius:4px; padding:2px 8px; font-size:12px; cursor:pointer;">Delete</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="value muted" style="margin-bottom:16px;">No attachments yet.</div>
+  {% endif %}
+
+  <form method="post" action="{{ rp }}/customer/{{ c.id }}/attachments" enctype="multipart/form-data"
+        style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <input type="file" name="file" required style="color:var(--text2); font-size:13px;">
+    <button type="submit" class="btn-edit" style="cursor:pointer;">Upload</button>
+    <span style="color:var(--text2); font-size:11px;">Max 10&nbsp;MB · email, Excel, PDF, Word, or image files</span>
+  </form>
+
 </div>
 
 <!-- Email-a-user modal -->

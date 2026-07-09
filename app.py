@@ -106,6 +106,31 @@ TEMP_LABEL = {
 }
 ARCH_COL = "Current deployed Architecture - Not what they want to get to, but what are they running now"
 
+# ── Attachments ─────────────────────────────────────────────────────────────
+# Documents attached to a customer record are stored as BLOBs in the DB so they
+# are covered by the existing backup/restore/export machinery.
+ATTACH_MAX_BYTES = 10 * 1024 * 1024  # 10 MB per file
+ATTACH_ALLOWED_EXT = {
+    ".eml", ".msg",                       # email
+    ".xlsx", ".xls", ".csv",              # spreadsheets
+    ".pdf", ".docx", ".doc", ".txt",      # documents
+    ".png", ".jpg", ".jpeg",              # images
+}
+# Types the browser can safely render inline; everything else is force-downloaded.
+ATTACH_INLINE_TYPES = {
+    ".pdf": "application/pdf",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+}
+
+
+def _safe_filename(name: str) -> str:
+    """Strip any path and control characters from an uploaded filename."""
+    name = os.path.basename(name or "").replace("\\", "").replace("/", "")
+    name = "".join(ch for ch in name if ch.isprintable() and ch not in '"\r\n\t')
+    return name.strip()[:200] or "attachment"
+
 
 # ── Auth helpers ──────────────────────────────────────────────────────────────
 
@@ -237,6 +262,22 @@ def migrate_db():
             value TEXT NOT NULL DEFAULT ''
         )
     """)
+
+    # attachments table — documents attached to a customer record (stored as BLOBs
+    # so they ride along with the existing DB backup/restore/export)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS attachments (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id  INTEGER NOT NULL,
+            filename     TEXT NOT NULL,
+            content_type TEXT,
+            size_bytes   INTEGER NOT NULL,
+            data         BLOB NOT NULL,
+            uploaded_by  TEXT,
+            uploaded_at  TEXT NOT NULL
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_attachments_customer ON attachments(customer_id)")
 
     # heat_history table — one row per customer per heat change
     conn.execute("""
@@ -876,13 +917,120 @@ def detail(request: Request, customer_id: int):
     users = conn.execute(
         "SELECT username, email FROM users WHERE is_active = 1 AND email IS NOT NULL AND email != '' ORDER BY username"
     ).fetchall()
+    # Attachment metadata only — never load the BLOB here.
+    attachments = conn.execute(
+        """SELECT id, filename, content_type, size_bytes, uploaded_by, uploaded_at
+           FROM attachments WHERE customer_id = ? ORDER BY id DESC""",
+        (customer_id,)
+    ).fetchall()
     conn.close()
     if not customer:
         return HTMLResponse("Not found", status_code=404)
     return templates.TemplateResponse(request=request, name="detail.html",
                                       context={"c": customer, "session": session,
-                                               "users": users,
+                                               "users": users, "attachments": attachments,
                                                "sent": request.query_params.get("sent", "")})
+
+
+@app.post("/customer/{customer_id}/attachments")
+async def upload_attachment(request: Request, customer_id: int, file: UploadFile = File(...)):
+    session = get_session(request)
+    if not session:
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
+
+    def back(msg: str) -> RedirectResponse:
+        return RedirectResponse(url=f"{ROOT_PATH}/customer/{customer_id}?sent={quote_plus(msg)}",
+                                status_code=303)
+
+    conn = get_db()
+    customer = conn.execute("SELECT id FROM customers WHERE id = ?", (customer_id,)).fetchone()
+    if not customer:
+        conn.close()
+        return HTMLResponse("Not found", status_code=404)
+
+    filename = _safe_filename(file.filename)
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in ATTACH_ALLOWED_EXT:
+        conn.close()
+        allowed = ", ".join(sorted(ATTACH_ALLOWED_EXT))
+        return back(f"err:File type '{ext or 'unknown'}' is not allowed. Allowed: {allowed}")
+
+    # Read at most the cap + 1 byte so an oversized upload can't exhaust memory.
+    content = await file.read(ATTACH_MAX_BYTES + 1)
+    if len(content) > ATTACH_MAX_BYTES:
+        conn.close()
+        return back(f"err:File is too large (limit {ATTACH_MAX_BYTES // (1024*1024)} MB).")
+    if not content:
+        conn.close()
+        return back("err:That file is empty.")
+
+    conn.execute(
+        """INSERT INTO attachments (customer_id, filename, content_type, size_bytes, data, uploaded_by, uploaded_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (customer_id, filename, file.content_type or "application/octet-stream",
+         len(content), content, session["username"], datetime.now().isoformat()),
+    )
+    conn.commit()
+    conn.close()
+    log_action(session["username"], "upload_attachment", str(customer_id), f"{filename} ({len(content)} bytes)")
+    return back(f"Attached '{filename}'.")
+
+
+@app.get("/customer/{customer_id}/attachments/{att_id}/download")
+def download_attachment(request: Request, customer_id: int, att_id: int):
+    session = get_session(request)
+    if not session:
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
+    conn = get_db()
+    row = conn.execute(
+        "SELECT filename, data FROM attachments WHERE id = ? AND customer_id = ?",
+        (att_id, customer_id),
+    ).fetchone()
+    conn.close()
+    if not row:
+        return HTMLResponse("Not found", status_code=404)
+
+    filename = _safe_filename(row["filename"])
+    ext = os.path.splitext(filename)[1].lower()
+    # Safe types render inline; everything else is force-downloaded as an opaque
+    # binary so the browser never executes an uploaded file.
+    if ext in ATTACH_INLINE_TYPES:
+        media_type = ATTACH_INLINE_TYPES[ext]
+        disposition = "inline"
+    else:
+        media_type = "application/octet-stream"
+        disposition = "attachment"
+    headers = {"Content-Disposition": f'{disposition}; filename="{filename}"'}
+    return StreamingResponse(io.BytesIO(row["data"]), media_type=media_type, headers=headers)
+
+
+@app.post("/customer/{customer_id}/attachments/{att_id}/delete")
+def delete_attachment(request: Request, customer_id: int, att_id: int):
+    session = get_session(request)
+    if not session:
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
+
+    def back(msg: str) -> RedirectResponse:
+        return RedirectResponse(url=f"{ROOT_PATH}/customer/{customer_id}?sent={quote_plus(msg)}",
+                                status_code=303)
+
+    conn = get_db()
+    row = conn.execute(
+        "SELECT filename, uploaded_by FROM attachments WHERE id = ? AND customer_id = ?",
+        (att_id, customer_id),
+    ).fetchone()
+    if not row:
+        conn.close()
+        return back("err:Attachment not found.")
+    # Only the uploader or an admin may delete.
+    if session.get("role") != "admin" and row["uploaded_by"] != session["username"]:
+        conn.close()
+        return back("err:You can only delete attachments you uploaded.")
+    conn.execute("DELETE FROM attachments WHERE id = ? AND customer_id = ?", (att_id, customer_id))
+    conn.commit()
+    conn.close()
+    log_action(session["username"], "delete_attachment", str(customer_id), row["filename"])
+    return back(f"Deleted '{row['filename']}'.")
 
 
 @app.post("/customer/{customer_id}/email")
