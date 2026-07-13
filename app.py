@@ -1409,12 +1409,20 @@ def admin(request: Request, msg: str = Query(""), error: str = Query("")):
         return RedirectResponse(url=f"{ROOT_PATH}/", status_code=303)
 
     db_exists = os.path.exists(DB_PATH)
-    db_size = f"{os.path.getsize(DB_PATH) // 1024} KB" if db_exists else "—"
-    record_count = 0
+
+    def _fmt_size(n):
+        return f"{n / 1048576:.1f} MB" if n >= 1048576 else f"{max(n, 0) // 1024} KB"
+
+    db_size = _fmt_size(os.path.getsize(DB_PATH)) if db_exists else "—"
+    record_count = attach_count = 0
+    attach_size = "—"
     if db_exists:
         try:
             conn = get_db()
             record_count = conn.execute("SELECT COUNT(*) FROM customers").fetchone()[0]
+            arow = conn.execute("SELECT COUNT(*), COALESCE(SUM(size_bytes), 0) FROM attachments").fetchone()
+            attach_count, attach_bytes = arow[0], arow[1]
+            attach_size = _fmt_size(attach_bytes)
             conn.close()
         except Exception:
             pass
@@ -1432,6 +1440,7 @@ def admin(request: Request, msg: str = Query(""), error: str = Query("")):
         request=request, name="admin.html",
         context={
             "backups": list_backups(), "db_size": db_size,
+            "attach_size": attach_size, "attach_count": attach_count,
             "record_count": record_count, "db_exists": db_exists,
             "msg": msg, "error": error, "session": session, "users": users,
             "email_cfg": email_cfg, "backup_dir_2": backup_dir_2,

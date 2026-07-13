@@ -248,6 +248,10 @@
       <div class="lbl">Database size</div>
     </div>
     <div class="stat">
+      <div class="num">{{ attach_size }}</div>
+      <div class="lbl">Attachments ({{ attach_count }} file{% if attach_count != 1 %}s{% endif %})</div>
+    </div>
+    <div class="stat">
       <div class="num">{{ backups|length }}</div>
       <div class="lbl">Backups stored</div>
     </div>
