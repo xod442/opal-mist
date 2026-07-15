@@ -1102,12 +1102,18 @@ def edit_form(request: Request, customer_id: int):
         return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
     conn = get_db()
     customer = conn.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
+    attachments = conn.execute(
+        """SELECT id, filename, content_type, size_bytes, uploaded_by, uploaded_at
+           FROM attachments WHERE customer_id = ? ORDER BY id DESC""",
+        (customer_id,)
+    ).fetchall()
     conn.close()
     if not customer:
         return HTMLResponse("Not found", status_code=404)
     return templates.TemplateResponse(
         request=request, name="edit.html",
-        context={"c": customer, "temp_options": list(TEMP_ORDER.keys()), "session": session},
+        context={"c": customer, "temp_options": list(TEMP_ORDER.keys()),
+                 "session": session, "attachments": attachments},
     )
 
 
