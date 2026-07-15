@@ -885,7 +885,12 @@ def dashboard(
         where.append("account_manager = ?")
         params.append(filter_am)
 
-    sql = "SELECT * FROM customers"
+    # "New" tag: record created within the last 14 days (by submission_time).
+    sql = """SELECT *,
+        CASE WHEN submission_time IS NOT NULL AND TRIM(submission_time) != ''
+                  AND julianday('now') - julianday(submission_time) < 14
+             THEN 1 ELSE 0 END AS is_new
+        FROM customers"""
     if where:
         sql += " WHERE " + " AND ".join(where)
     sql += " ORDER BY temperature_order ASC, customer_name ASC"

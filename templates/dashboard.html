@@ -316,14 +316,13 @@
           <td><strong>{{ c.customer_name }}</strong></td>
           <td>
             <span class="badge badge-{{ c.temperature_label }}">{{ c.temperature_label }}</span>
+            {% if c.is_new %}<span class="trend-new" title="Added within the last 2 weeks">New</span>{% endif %}
             {% if trend_map and c.id in trend_map %}
               {% set t = trend_map[c.id] %}
               {% if t.direction == 'worse' %}
                 <span class="trend-up" title="Was {{ t.from_label }}">↑</span>
               {% elif t.direction == 'better' %}
                 <span class="trend-down" title="Was {{ t.from_label }}">↓</span>
-              {% elif t.direction == 'new' %}
-                <span class="trend-new">New</span>
               {% endif %}
             {% endif %}
           </td>
