@@ -32,6 +32,16 @@ SECRET_KEY = os.getenv("SECRET_KEY", "opal-change-me-in-production")
 ROOT_PATH  = os.getenv("ROOT_PATH", "")
 SESSION_MAX_AGE = 8 * 3600  # 8 hours
 
+# Session cookie config. Both apps live on the SAME host (theedge.ext.hpe.com,
+# under /opal-central and /opal-mist), so:
+#  - COOKIE_NAME is derived from ROOT_PATH → distinct per app (no clobbering).
+#  - COOKIE_PATH is scoped to the app's route so cookies don't collide.
+#  - COOKIE_SECURE defaults on — required for cookies to survive the HTTPS edge
+#    proxy; set COOKIE_SECURE=false only for plain-HTTP local dev.
+COOKIE_NAME   = "session_" + (ROOT_PATH.strip("/").replace("/", "_") or "app")
+COOKIE_PATH   = ROOT_PATH or "/"
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "true").strip().lower() != "false"
+
 os.makedirs(BACKUP_DIR, exist_ok=True)
 
 app = FastAPI(title="Opal-Mist", root_path=ROOT_PATH)
@@ -135,7 +145,7 @@ def _safe_filename(name: str) -> str:
 # ── Auth helpers ──────────────────────────────────────────────────────────────
 
 def get_session(request: Request):
-    token = request.cookies.get("session")
+    token = request.cookies.get(COOKIE_NAME)
     if not token:
         return None
     try:
@@ -160,7 +170,8 @@ def require_admin(request: Request):
 
 def set_session_cookie(response, user_id, username, role):
     token = serializer.dumps({"user_id": user_id, "username": username, "role": role})
-    response.set_cookie("session", token, httponly=True, samesite="lax", max_age=SESSION_MAX_AGE)
+    response.set_cookie(COOKIE_NAME, token, httponly=True, samesite="lax",
+                        secure=COOKIE_SECURE, path=COOKIE_PATH, max_age=SESSION_MAX_AGE)
 
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
@@ -724,7 +735,7 @@ def login_submit(
 @app.get("/logout")
 def logout():
     response = RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
-    response.delete_cookie("session")
+    response.delete_cookie(COOKIE_NAME, path=COOKIE_PATH)
     return response
 
 
