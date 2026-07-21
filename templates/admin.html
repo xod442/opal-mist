@@ -465,6 +465,12 @@
                 {{ 'Disable' if u.is_active else 'Enable' }}
               </button>
             </form>
+            <form method="post" action="{{ rp }}/admin/users/{{ u.id }}/role"
+                  onsubmit="return confirm({{ ('Demote ' ~ u.username ~ ' to user?') | tojson if u.role == 'admin' else ('Promote ' ~ u.username ~ ' to admin?') | tojson }})">
+              <button class="btn btn-outline btn-sm" type="submit">
+                {{ 'Make user' if u.role == 'admin' else 'Make admin' }}
+              </button>
+            </form>
             {% endif %}
             <form method="post" action="{{ rp }}/admin/users/{{ u.id }}/reset-password"
                   onsubmit="return confirm('Reset password for {{ u.username }} to a temporary password?')">

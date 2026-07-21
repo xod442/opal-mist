@@ -42,6 +42,17 @@ COOKIE_NAME   = "session_" + (ROOT_PATH.strip("/").replace("/", "_") or "app")
 COOKIE_PATH   = ROOT_PATH or "/"
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "true").strip().lower() != "false"
 
+# HPE Okta / Shibboleth SSO. When SSO_ENABLED is on, a trusted reverse proxy
+# (Apache + Shibboleth) authenticates the user upstream and forwards their
+# identity in request headers. The app then auto-logs-in matching accounts and
+# auto-provisions first-time users (see docs/SSO.md). Disabled by default so
+# local/dev runs keep using the login form; the proxy deployment sets
+# SSO_ENABLED=true. Only trust these headers when the app is reachable ONLY via
+# the proxy (bind the container to 127.0.0.1) — otherwise they are spoofable.
+SSO_ENABLED      = os.getenv("SSO_ENABLED", "false").strip().lower() == "true"
+SSO_EMAIL_HEADER = os.getenv("SSO_EMAIL_HEADER", "x-remote-email").strip().lower()
+SSO_NAME_HEADER  = os.getenv("SSO_NAME_HEADER", "x-remote-displayname").strip().lower()
+
 os.makedirs(BACKUP_DIR, exist_ok=True)
 
 app = FastAPI(title="Opal-Mist", root_path=ROOT_PATH)
@@ -146,12 +157,17 @@ def _safe_filename(name: str) -> str:
 
 def get_session(request: Request):
     token = request.cookies.get(COOKIE_NAME)
-    if not token:
-        return None
-    try:
-        return serializer.loads(token, max_age=SESSION_MAX_AGE)
-    except (BadSignature, SignatureExpired):
-        return None
+    if token:
+        try:
+            return serializer.loads(token, max_age=SESSION_MAX_AGE)
+        except (BadSignature, SignatureExpired):
+            pass
+    # Fall back to an SSO-derived identity attached by the sso_auto_login
+    # middleware (present only when SSO_ENABLED and a trusted header was sent).
+    sso_user = getattr(request.state, "sso_user", None)
+    if sso_user:
+        return {"user_id": sso_user["id"], "username": sso_user["username"], "role": sso_user["role"]}
+    return None
 
 
 def require_user(request: Request):
@@ -172,6 +188,87 @@ def set_session_cookie(response, user_id, username, role):
     token = serializer.dumps({"user_id": user_id, "username": username, "role": role})
     response.set_cookie(COOKIE_NAME, token, httponly=True, samesite="lax",
                         secure=COOKIE_SECURE, path=COOKIE_PATH, max_age=SESSION_MAX_AGE)
+
+
+# ── SSO (Okta / Shibboleth trusted-header) ─────────────────────────────────────
+
+def sso_email_from_request(request: Request):
+    """The Okta email forwarded by the proxy, or None when SSO is off/absent."""
+    if not SSO_ENABLED:
+        return None
+    email = request.headers.get(SSO_EMAIL_HEADER, "").strip()
+    return email or None
+
+
+def resolve_or_provision_sso_user(conn, email: str):
+    """Look up an active user by email (case-insensitive); auto-provision a new
+    non-admin 'user' on first SSO login. Returns the users row, or None if the
+    matched account exists but is disabled."""
+    email_norm = email.strip().lower()
+    row = conn.execute(
+        "SELECT * FROM users WHERE lower(email) = ? ORDER BY id LIMIT 1", (email_norm,)
+    ).fetchone()
+    if row:
+        return row if row["is_active"] else None
+    # First-time SSO user → create as least-privilege 'user'. The password hash
+    # is random/unusable, so the account is reachable only through SSO.
+    now = datetime.now().isoformat()
+    unusable = pwd_ctx.hash(secrets.token_urlsafe(32))
+    try:
+        conn.execute(
+            "INSERT INTO users (username, email, password_hash, role, is_active, must_change_password, created_at) "
+            "VALUES (?, ?, ?, 'user', 1, 0, ?)",
+            (email_norm, email_norm, unusable, now),
+        )
+        conn.commit()
+        log_action(email_norm, "sso_user_provisioned", email_norm)
+    except sqlite3.IntegrityError:
+        conn.rollback()  # username already taken (race / pre-existing) → reuse it
+    return conn.execute(
+        "SELECT * FROM users WHERE lower(email) = ? OR username = ? ORDER BY id LIMIT 1",
+        (email_norm, email_norm),
+    ).fetchone()
+
+
+@app.middleware("http")
+async def sso_auto_login(request: Request, call_next):
+    """Auto-login via the trusted proxy identity header. On the first request of
+    a browser session it provisions/looks-up the user and mints the normal
+    session cookie, so the rest of the app is unchanged. No-op when SSO is off,
+    a valid session cookie already exists, or no trusted header is present."""
+    request.state.sso_user = None
+    path = request.url.path
+    consider = (
+        SSO_ENABLED
+        and not request.cookies.get(COOKIE_NAME)
+        and not path.endswith("/logout")
+        and "/static/" not in path
+    )
+    if consider:
+        email = sso_email_from_request(request)
+        if email:
+            conn = get_db()
+            try:
+                request.state.sso_user = resolve_or_provision_sso_user(conn, email)
+            finally:
+                conn.close()
+
+    response = await call_next(request)
+
+    # Persist a session cookie once (first SSO request) so later requests skip
+    # the header lookup, and stamp last_login a single time.
+    user = getattr(request.state, "sso_user", None)
+    if user is not None and not request.cookies.get(COOKIE_NAME):
+        set_session_cookie(response, user["id"], user["username"], user["role"])
+        try:
+            conn = get_db()
+            conn.execute("UPDATE users SET last_login = ? WHERE id = ?",
+                         (datetime.now().isoformat(), user["id"]))
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+    return response
 
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
@@ -1953,6 +2050,26 @@ def admin_user_toggle(request: Request, user_id: int):
         new_state = "disabled" if target_user["is_active"] else "enabled"
         log_action(session["username"], f"user_{new_state}", target_user["username"])
     return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=User+updated", status_code=303)
+
+
+@app.post("/admin/users/{user_id}/role")
+def admin_user_role(request: Request, user_id: int):
+    """Toggle a user between the 'user' and 'admin' roles. Admins elevate/demote
+    accounts here (e.g. after an auto-provisioned SSO user needs admin rights)."""
+    session = get_session(request)
+    if not session or session.get("role") != "admin":
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
+    if session["user_id"] == user_id:
+        return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Cannot+change+your+own+role", status_code=303)
+    conn = get_db()
+    target = conn.execute("SELECT username, role FROM users WHERE id = ?", (user_id,)).fetchone()
+    if target:
+        new_role = "user" if target["role"] == "admin" else "admin"
+        conn.execute("UPDATE users SET role = ? WHERE id = ?", (new_role, user_id))
+        conn.commit()
+        log_action(session["username"], f"user_role_{new_role}", target["username"])
+    conn.close()
+    return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Role+updated", status_code=303)
 
 
 @app.post("/admin/users/{user_id}/reset-password")
