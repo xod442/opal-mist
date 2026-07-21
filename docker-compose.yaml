@@ -3,7 +3,10 @@ services:
   opal-mist:
     build: .
     ports:
-      - "9091:8000"
+      # Bind to loopback only: the app must be reachable ONLY through the
+      # Apache + Shibboleth SSO proxy. Exposing it publicly would let anyone
+      # bypass Okta and spoof the X-Remote-* SSO headers. See docs/SSO.md.
+      - "127.0.0.1:9091:8000"
     volumes:
       - ./data:/data
     environment:
@@ -11,6 +14,8 @@ services:
       BACKUP_DIR: /data/backups
       ROOT_PATH: /opal-mist
       OPAL_FERNET_KEY: ${OPAL_FERNET_KEY:-}
+      # Trust the proxy-forwarded Okta identity and auto-login/provision users.
+      SSO_ENABLED: ${SSO_ENABLED:-true}
     restart: unless-stopped
 
   ingest:
