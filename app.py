@@ -49,6 +49,13 @@ app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 templates.env.globals["rp"] = ROOT_PATH
 
+# Microsoft Forms intake form that feeds customer records (overridable via env).
+INTAKE_FORM_URL = os.getenv(
+    "INTAKE_FORM_URL",
+    "https://forms.office.com/pages/responsepage.aspx?id=YSBbEGm2MUuSrCTTBNGV3JLaoMTu-DBGtb8tTKtMkY9UQzVOTDAyNDZXVjEwNlhZVDdTM0RROVQ2Vy4u&route=shorturl",
+)
+templates.env.globals["intake_form_url"] = INTAKE_FORM_URL
+
 pwd_ctx    = CryptContext(schemes=["bcrypt"], deprecated="auto")
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 
