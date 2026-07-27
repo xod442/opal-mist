@@ -1,6 +1,8 @@
 venv/
 opal.db
 *.db
+*.db.bak*
+*.bak
 *.csv
 !example_users.csv
 __pycache__/
