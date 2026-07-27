@@ -14,3 +14,4 @@ data/secret.key
 # Local secrets — never commit
 .env
 !.env.example
+docker-compose.override.yaml

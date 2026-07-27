@@ -152,14 +152,6 @@
   <div class="section-label">Read-only fields</div>
   <div class="grid">
     <div class="field">
-      <span class="label">Account Manager</span>
-      <div class="value">{{ c.account_manager or '—' }}</div>
-    </div>
-    <div class="field">
-      <span class="label">Sales Engineer</span>
-      <div class="value">{{ c.sales_engineer or '—' }}</div>
-    </div>
-    <div class="field">
       <span class="label">Location</span>
       <div class="value">{{ c.location or '—' }}</div>
     </div>
@@ -181,6 +173,16 @@
       <span class="label">Customer Name</span>
       <div class="value">{{ c.customer_name }}</div>
       <input type="hidden" name="customer_name" value="{{ c.customer_name }}">
+    </div>
+
+    <div class="field">
+      <label class="label" for="account_manager">Account Manager</label>
+      <input type="text" id="account_manager" name="account_manager" value="{{ c.account_manager or '' }}">
+    </div>
+
+    <div class="field">
+      <label class="label" for="sales_engineer">Sales Engineer</label>
+      <input type="text" id="sales_engineer" name="sales_engineer" value="{{ c.sales_engineer or '' }}">
     </div>
 
     <div class="field">

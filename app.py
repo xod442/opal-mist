@@ -1162,6 +1162,8 @@ def edit_save(
     next_actions: str = Form(""),
     get_well_plan: str = Form(""),
     custodian: str = Form(""),
+    account_manager: str = Form(""),
+    sales_engineer: str = Form(""),
 ):
     session = get_session(request)
     if not session:
@@ -1175,7 +1177,8 @@ def edit_save(
             at_risk=?, risk_reasons=?, architecture=?, near_term_goals=?,
             bu_contact=?, ask_from_bu=?, background=?, notes=?, last_modified=?,
             state=?, category=?, bu_plm_sponsor=?, bu_tme_sponsor=?,
-            current_status=?, next_actions=?, get_well_plan=?, custodian=?
+            current_status=?, next_actions=?, get_well_plan=?, custodian=?,
+            account_manager=?, sales_engineer=?
         WHERE id=?
     """, (
         customer_name, temperature,
@@ -1186,6 +1189,7 @@ def edit_save(
         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         state, category, bu_plm_sponsor, bu_tme_sponsor,
         current_status, next_actions, get_well_plan, custodian,
+        account_manager, sales_engineer,
         customer_id,
     ))
     temp_label = TEMP_LABEL.get(temperature, temperature)
