@@ -24,6 +24,7 @@ A customer escalation risk tracking dashboard for the HPE Networking Mist team. 
 - **Audit trail** — every database change logged with the user who made it
 - **Auto-backup** — database backed up at 6 AM and 6 PM daily, last 20 backups retained; optional secondary backup location configurable from the Admin UI
 - **Admin tools** — manual backup, CSV upload, export, restore, delete database (auto-recreates fresh DB and redirects to login)
+- **Move records between apps** — relocate a mis-filed customer, with its attachments and heat history, to the twin app's database in one atomic step from the detail page (admin only)
 - **REST API** — full Swagger UI at `/docs` and ReDoc at `/redoc`; all routes are documented with request/response schemas
 
 ---
@@ -198,6 +199,8 @@ Set these in the `environment:` section of `docker-compose.yaml`:
 | `DB_PATH` | `/data/opal-mist.db` | Path to the SQLite database inside the container |
 | `BACKUP_DIR` | `/data/backups` | Directory for backup files |
 | `SECRET_KEY` | `opal-change-me-in-production` | HMAC key for session cookies — **change this in production** |
+| `OTHER_DB_PATH` | _empty_ | Path to the twin app's SQLite DB, mounted into this container (e.g. `/data-other/opal.db`), to enable moving records between apps. Empty disables the feature. |
+| `OTHER_APP_NAME` | `the other app` | Twin app's display name shown on the Move button (e.g. `Opal-Central`) |
 
 Data is persisted in `./data/` on the host filesystem and is unaffected by container restarts.
 

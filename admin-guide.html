@@ -287,6 +287,7 @@
   <div class="nav-section">Dashboard</div>
   <a class="nav-link" href="#dashboard">Main Dashboard</a>
   <a class="nav-link" href="#detail-edit">Detail &amp; Edit</a>
+  <a class="nav-link" href="#move-record">Moving Records</a>
   <a class="nav-link" href="#support">Support Page</a>
   <a class="nav-link" href="#engagement">Engagement Tracker</a>
   <a class="nav-link" href="#executive">Executive View</a>
@@ -935,6 +936,51 @@ bsmith,bsmith@example.com,TempPass3!,admin</code></pre>
     </p>
   </section>
 
+  <!-- ── Move Record Between Apps ── -->
+  <section id="move-record">
+    <h2>Moving a Record Between Apps</h2>
+    <p>
+      Opal-Central and Opal-Mist are twin apps, each with its own database. Occasionally a customer is
+      submitted into the wrong one. An admin can relocate a single record — with everything attached to it —
+      directly from the customer <a href="#detail-edit" style="color:var(--accent);">Detail page</a>, without
+      exporting or merging whole databases.
+    </p>
+
+    <h3>How to move a record</h3>
+    <ul>
+      <li>Open the customer's <strong>Details &rarr;</strong> page.</li>
+      <li>Click <strong>&#8646; Move to Opal-Central</strong> in the header (visible to admins only).</li>
+      <li>Confirm the prompt. The record is relocated and you are returned to the dashboard with a confirmation message.</li>
+    </ul>
+    <p>The button only appears when a sibling database is configured (see below) and you are signed in as an admin.</p>
+
+    <h3>What gets moved</h3>
+    <p>The move runs as a single SQLite <code>ATTACH</code> transaction and carries the complete record:</p>
+    <ul>
+      <li>the customer row and all of its fields,</li>
+      <li>every attachment (documents are stored inside the database, so they travel with the record), and</li>
+      <li>the customer's heat / trend history.</li>
+    </ul>
+    <p>
+      The record is written to the other database and removed from this one atomically — either the whole
+      move succeeds or nothing changes. Both the source and destination audit logs record the move.
+    </p>
+
+    <div class="callout callout-note">
+      <strong>Note:</strong> The record is assigned a <em>new id</em> in the destination database, so it can never
+      collide with an existing record there. Moving is reversible — open the record in the other app and move it
+      back — but it receives a fresh id again on the return trip.
+    </div>
+
+    <div class="callout callout-warning">
+      <strong>Requirement:</strong> Both databases must live on the <strong>same host</strong>, and each app's
+      container must mount the other's data directory. This is configured with the <code>OTHER_DB_PATH</code> and
+      <code>OTHER_APP_NAME</code> environment variables plus a read-write volume mount in
+      <code>docker-compose.yaml</code> (see <a href="#env-vars" style="color:var(--accent);">Environment Variables</a>).
+      When it is not configured, the Move button is hidden.
+    </div>
+  </section>
+
   <!-- ── Support Page ── -->
   <section id="support">
     <h2>Support Page</h2>
@@ -1294,6 +1340,8 @@ curl -b cookies.txt http://localhost:443/admin/export</code></pre>
           <tr><td><code>BACKUP_DIR</code></td><td><code>/data/backups</code></td><td>Directory where backup files are written</td></tr>
           <tr><td><code>SECRET_KEY</code></td><td><code>opal-change-me-in-production</code></td><td>HMAC key for signing session cookies. Change this in any non-local deployment.</td></tr>
           <tr><td><code>ROOT_PATH</code></td><td><em>empty</em></td><td>URL prefix when the app is served behind a reverse proxy at a subpath (e.g. <code>/opal-mist</code>). Leave empty for direct IP/port access.</td></tr>
+          <tr><td><code>OTHER_DB_PATH</code></td><td><em>empty</em></td><td>Path to the twin app's SQLite database, mounted into this container (e.g. <code>/data-other/opal.db</code>). Enables the "Move to &lt;other app&gt;" action. Empty disables the feature.</td></tr>
+          <tr><td><code>OTHER_APP_NAME</code></td><td><code>the other app</code></td><td>Display name of the twin app, shown on the Move button and its confirmation (e.g. <code>Opal-Central</code>).</td></tr>
         </tbody>
       </table>
     </div>
