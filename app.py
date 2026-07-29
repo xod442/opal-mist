@@ -927,6 +927,69 @@ def dashboard(
         },
     )
 
+# ── BU dashboard ────────────────────────────────────────────────────────────────
+# Same customer data as the main dashboard, but framed for the BU team:
+# shows BU PLM sponsor, BU TME sponsor and custodian instead of AM/SE/location.
+
+@app.get("/bu", response_class=HTMLResponse)
+def bu_dashboard(
+    request: Request,
+    search: str = Query(""),
+    filter_temp: str = Query(""),
+    filter_risk: str = Query(""),
+    msg: str = Query(""),
+):
+    session = get_session(request)
+    if not session:
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
+
+    conn = get_db()
+    metrics = {}
+    for label in ("Critical", "Hot", "Concerned", "Stable", "Happy"):
+        metrics[label] = conn.execute(
+            "SELECT COUNT(*) FROM customers WHERE temperature_label = ?", (label,)
+        ).fetchone()[0]
+    metrics["Total"] = sum(metrics.values())
+    metrics["At Risk"] = conn.execute(
+        "SELECT COUNT(*) FROM customers WHERE at_risk = 'Yes – actively evaluating other vendors'"
+    ).fetchone()[0]
+
+    where, params = [], []
+    if search:
+        where.append("""(customer_name LIKE ? OR bu_plm_sponsor LIKE ? OR bu_tme_sponsor LIKE ?
+            OR custodian LIKE ? OR location LIKE ? OR risk_reasons LIKE ?)""")
+        params += [f"%{search}%"] * 6
+    if filter_temp:
+        where.append("temperature_label = ?")
+        params.append(filter_temp)
+    if filter_risk:
+        where.append("at_risk = ?")
+        params.append(filter_risk)
+
+    # "New" tag: record created within the last 14 days (by submission_time).
+    sql = """SELECT *,
+        CASE WHEN submission_time IS NOT NULL AND TRIM(submission_time) != ''
+                  AND julianday('now') - julianday(submission_time) < 14
+             THEN 1 ELSE 0 END AS is_new
+        FROM customers"""
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY temperature_order ASC, customer_name ASC"
+
+    customers = conn.execute(sql, params).fetchall()
+    trend_map = get_trend_map(conn)
+    conn.close()
+
+    return templates.TemplateResponse(
+        request=request, name="bu.html",
+        context={
+            "customers": customers, "metrics": metrics,
+            "search": search, "filter_temp": filter_temp,
+            "filter_risk": filter_risk,
+            "session": session, "msg": msg, "trend_map": trend_map,
+        },
+    )
+
 
 # ── Detail ────────────────────────────────────────────────────────────────────
 

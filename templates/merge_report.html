@@ -48,6 +48,9 @@
   .note { color: var(--text2); font-size: 12px; font-style: italic; margin-top: 20px; }
   a.btn { display:inline-block; margin-top: 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 16px; color: var(--text); font-size: 13px; font-weight: 600; text-decoration: none; }
   a.btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Locked table headers on scroll */
+  thead th { position: sticky; top: 0; z-index: 3; box-shadow: inset 0 -1px 0 var(--border); }
 </style>
 </head>
 <body>

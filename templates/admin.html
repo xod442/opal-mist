@@ -195,6 +195,9 @@
   }
   .create-user-form input:focus, .create-user-form select:focus { border-color: var(--accent); }
   .create-user-form .full { grid-column: 1 / -1; }
+
+  /* Locked table headers on scroll */
+  thead th { position: sticky; top: 0; z-index: 3; box-shadow: inset 0 -1px 0 var(--border); }
 </style>
 </head>
 <body>

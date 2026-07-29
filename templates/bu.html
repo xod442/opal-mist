@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Opal-Mist — Customers at Risk</title>
+<title>Opal-Mist — BU Dashboard</title>
 <style>
   :root {
     --bg: #000000;
@@ -210,38 +210,38 @@
 </head>
 <body>
 
-{% set nav_active = "customers" %}
+{% set nav_active = "bu" %}
 {% include "_nav.html" %}
 
 <div class="container">
 
   <!-- Metric Cards -->
   <div class="metrics">
-    <a class="card total {% if not filter_temp and not filter_risk %}active{% endif %}" href="{{ rp }}/">
+    <a class="card total {% if not filter_temp and not filter_risk %}active{% endif %}" href="{{ rp }}/bu">
       <div class="num">{{ metrics.Total }}</div>
       <div class="lbl">Total</div>
     </a>
-    <a class="card critical {% if filter_temp == 'Critical' %}active{% endif %}" href="{{ rp }}/?filter_temp=Critical">
+    <a class="card critical {% if filter_temp == 'Critical' %}active{% endif %}" href="{{ rp }}/bu?filter_temp=Critical">
       <div class="num">{{ metrics.Critical }}</div>
       <div class="lbl">Critical</div>
     </a>
-    <a class="card hot {% if filter_temp == 'Hot' %}active{% endif %}" href="{{ rp }}/?filter_temp=Hot">
+    <a class="card hot {% if filter_temp == 'Hot' %}active{% endif %}" href="{{ rp }}/bu?filter_temp=Hot">
       <div class="num">{{ metrics.Hot }}</div>
       <div class="lbl">Hot</div>
     </a>
-    <a class="card concerned {% if filter_temp == 'Concerned' %}active{% endif %}" href="{{ rp }}/?filter_temp=Concerned">
+    <a class="card concerned {% if filter_temp == 'Concerned' %}active{% endif %}" href="{{ rp }}/bu?filter_temp=Concerned">
       <div class="num">{{ metrics.Concerned }}</div>
       <div class="lbl">Concerned</div>
     </a>
-    <a class="card stable {% if filter_temp == 'Stable' %}active{% endif %}" href="{{ rp }}/?filter_temp=Stable">
+    <a class="card stable {% if filter_temp == 'Stable' %}active{% endif %}" href="{{ rp }}/bu?filter_temp=Stable">
       <div class="num">{{ metrics.Stable }}</div>
       <div class="lbl">Stable</div>
     </a>
-    <a class="card happy {% if filter_temp == 'Happy' %}active{% endif %}" href="{{ rp }}/?filter_temp=Happy">
+    <a class="card happy {% if filter_temp == 'Happy' %}active{% endif %}" href="{{ rp }}/bu?filter_temp=Happy">
       <div class="num">{{ metrics.Happy }}</div>
       <div class="lbl">Happy</div>
     </a>
-    <a class="card atrisk {% if filter_risk == 'Yes – actively evaluating other vendors' %}active{% endif %}" href="{{ rp }}/?filter_risk=Yes+%E2%80%93+actively+evaluating+other+vendors">
+    <a class="card atrisk {% if filter_risk == 'Yes – actively evaluating other vendors' %}active{% endif %}" href="{{ rp }}/bu?filter_risk=Yes+%E2%80%93+actively+evaluating+other+vendors">
       <div class="num">{{ metrics['At Risk'] }}</div>
       <div class="lbl">At Risk</div>
     </a>
@@ -249,7 +249,7 @@
 
   <!-- Filters -->
   <form class="filters" method="get">
-    <input type="text" name="search" placeholder="Search customer, SE, AM, custodian, location..." value="{{ search }}">
+    <input type="text" name="search" placeholder="Search customer, BU sponsors, custodian..." value="{{ search }}">
     <select name="filter_temp">
       <option value="">All temperatures</option>
       {% for t in ['Critical','Hot','Concerned','Stable','Happy'] %}
@@ -262,14 +262,8 @@
       <option value="No – unhappy but not leaving" {% if filter_risk == 'No – unhappy but not leaving' %}selected{% endif %}>Unhappy, not leaving</option>
       <option value="Not sure" {% if filter_risk == 'Not sure' %}selected{% endif %}>Not sure</option>
     </select>
-    <select name="filter_am">
-      <option value="">All AMs</option>
-      {% for am in ams %}
-      <option value="{{ am }}" {% if filter_am == am %}selected{% endif %}>{{ am }}</option>
-      {% endfor %}
-    </select>
     <button type="submit">Filter</button>
-    <a class="clear" href="{{ rp }}/">Clear</a>
+    <a class="clear" href="{{ rp }}/bu">Clear</a>
   </form>
 
   <div class="count">{{ customers|length }} customer{% if customers|length != 1 %}s{% endif %}</div>
@@ -282,9 +276,9 @@
           <th class="sortable" data-col="0">Customer</th>
           <th class="sortable" data-col="1" data-type="heat">Heat</th>
           <th class="sortable" data-col="2">At Risk</th>
-          <th class="sortable" data-col="3">Location</th>
-          <th class="sortable" data-col="4">Account Manager</th>
-          <th class="sortable" data-col="5">Sales Engineer</th>
+          <th class="sortable" data-col="3">BU PLM Sponsor</th>
+          <th class="sortable" data-col="4">BU TME Sponsor</th>
+          <th class="sortable" data-col="5">Custodian</th>
           <th>Risk Reasons</th>
           <th></th>
         </tr>
@@ -314,9 +308,9 @@
               <span class="risk-no">No</span>
             {% endif %}
           </td>
-          <td>{{ c.location }}</td>
-          <td>{{ c.account_manager }}</td>
-          <td>{{ c.sales_engineer }}</td>
+          <td>{{ c.bu_plm_sponsor or '—' }}</td>
+          <td>{{ c.bu_tme_sponsor or '—' }}</td>
+          <td>{{ c.custodian or '—' }}</td>
           <td><div class="truncate" title="{{ c.risk_reasons }}">{{ c.risk_reasons }}</div></td>
           <td style="white-space:nowrap">
             <a class="detail-link" href="{{ rp }}/customer/{{ c.id }}">Details →</a>
