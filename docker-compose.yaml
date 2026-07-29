@@ -6,11 +6,15 @@ services:
       - "9091:8000"
     volumes:
       - ./data:/data
+      # Sibling app's data dir (same host) so records can be moved between DBs.
+      - ../opal/data:/data-other
     environment:
       DB_PATH: /data/opal-mist.db
       BACKUP_DIR: /data/backups
       ROOT_PATH: /opal-mist
       OPAL_FERNET_KEY: ${OPAL_FERNET_KEY:-}
+      OTHER_DB_PATH: /data-other/opal.db
+      OTHER_APP_NAME: Opal-Central
     restart: unless-stopped
 
   ingest:

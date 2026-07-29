@@ -32,6 +32,12 @@ SECRET_KEY = os.getenv("SECRET_KEY", "opal-change-me-in-production")
 ROOT_PATH  = os.getenv("ROOT_PATH", "")
 SESSION_MAX_AGE = 8 * 3600  # 8 hours
 
+# Sibling app's SQLite DB, co-located on the same host and mounted into this
+# container (see docker-compose). Lets an admin relocate a mis-filed customer
+# record into the twin app via SQLite ATTACH. Empty = feature disabled.
+OTHER_DB_PATH  = os.getenv("OTHER_DB_PATH", "")
+OTHER_APP_NAME = os.getenv("OTHER_APP_NAME", "the other app")
+
 # Session cookie config. Both apps live on the SAME host (theedge.ext.hpe.com,
 # under /opal-central and /opal-mist), so:
 #  - COOKIE_NAME is derived from ROOT_PATH → distinct per app (no clobbering).
@@ -48,6 +54,8 @@ app = FastAPI(title="Opal-Mist", root_path=ROOT_PATH)
 app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 templates.env.globals["rp"] = ROOT_PATH
+templates.env.globals["other_app_name"] = OTHER_APP_NAME
+templates.env.globals["other_db_ready"] = bool(OTHER_DB_PATH)
 
 # Microsoft Forms intake form that feeds customer records (overridable via env).
 INTAKE_FORM_URL = os.getenv(
@@ -1016,6 +1024,93 @@ def detail(request: Request, customer_id: int):
                                       context={"c": customer, "session": session,
                                                "users": users, "attachments": attachments,
                                                "sent": request.query_params.get("sent", "")})
+
+
+@app.post("/customer/{customer_id}/move")
+def move_customer(request: Request, customer_id: int):
+    """Relocate a mis-filed customer — with its attachments and heat history — to
+    the twin app's database. Uses SQLite ATTACH so both DB files are written in a
+    single transaction (atomic under the default rollback journal). Admin only."""
+    session = get_session(request)
+    if not session:
+        return RedirectResponse(url=f"{ROOT_PATH}/login", status_code=303)
+
+    def back(msg: str) -> RedirectResponse:
+        return RedirectResponse(url=f"{ROOT_PATH}/customer/{customer_id}?sent={quote_plus(msg)}",
+                                status_code=303)
+
+    if session.get("role") != "admin":
+        return back("err:Admin only — you can't move records.")
+    if not OTHER_DB_PATH:
+        return back("err:No sibling database is configured for this app.")
+    if not os.path.exists(OTHER_DB_PATH):
+        return back(f"err:{OTHER_APP_NAME} database is not reachable on this host.")
+
+    conn = get_db()
+    conn.isolation_level = None            # take manual control of the transaction
+    conn.execute("PRAGMA busy_timeout = 5000")
+    row = conn.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
+    if not row:
+        conn.close()
+        return HTMLResponse("Not found", status_code=404)
+    cname = row["customer_name"]
+
+    try:
+        conn.execute("ATTACH DATABASE ? AS other", (OTHER_DB_PATH,))
+        # Exclude the autoincrement id so the destination assigns a fresh one
+        # (avoids colliding with an existing row over there).
+        cust_cols = [r[1] for r in conn.execute("PRAGMA table_info(customers)") if r[1] != "id"]
+        att_cols  = [r[1] for r in conn.execute("PRAGMA table_info(attachments)") if r[1] not in ("id", "customer_id")]
+        hist_cols = [r[1] for r in conn.execute("PRAGMA table_info(heat_history)") if r[1] not in ("id", "customer_id")]
+        cc, ac, hc = ", ".join(cust_cols), ", ".join(att_cols), ", ".join(hist_cols)
+
+        conn.execute("BEGIN IMMEDIATE")
+        # 1. the customer row → new id in the other DB
+        conn.execute(f"INSERT INTO other.customers ({cc}) SELECT {cc} FROM customers WHERE id = ?",
+                     (customer_id,))
+        new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        # 2. attachments (BLOBs live in the DB) remapped to the new id
+        if att_cols:
+            conn.execute(
+                f"INSERT INTO other.attachments (customer_id, {ac}) "
+                f"SELECT ?, {ac} FROM attachments WHERE customer_id = ?", (new_id, customer_id))
+        # 3. heat / trend history remapped to the new id
+        if hist_cols:
+            conn.execute(
+                f"INSERT INTO other.heat_history (customer_id, {hc}) "
+                f"SELECT ?, {hc} FROM heat_history WHERE customer_id = ?", (new_id, customer_id))
+        # 4. audit trail on the receiving side
+        conn.execute(
+            "INSERT INTO other.audit_log (ts, username, action, target, detail) VALUES (?,?,?,?,?)",
+            (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), session["username"], "move-in",
+             cname, f"Moved in from {OTHER_APP_NAME}'s counterpart (arrived as id {new_id})"))
+        # 5. remove locally — same transaction, so it's all-or-nothing
+        conn.execute("DELETE FROM attachments WHERE customer_id = ?", (customer_id,))
+        conn.execute("DELETE FROM heat_history WHERE customer_id = ?", (customer_id,))
+        conn.execute("DELETE FROM customers WHERE id = ?", (customer_id,))
+        conn.execute("COMMIT")
+    except Exception as e:
+        try:
+            conn.execute("ROLLBACK")
+        except Exception:
+            pass
+        try:
+            conn.execute("DETACH DATABASE other")
+        except Exception:
+            pass
+        conn.close()
+        return back(f"err:Move failed — nothing was changed. ({e})")
+
+    try:
+        conn.execute("DETACH DATABASE other")
+    except Exception:
+        pass
+    conn.close()
+
+    log_action(session["username"], "move-out", cname, f"Moved to {OTHER_APP_NAME} (was id {customer_id})")
+    return RedirectResponse(
+        url=f"{ROOT_PATH}/?msg={quote_plus(cname + ' moved to ' + OTHER_APP_NAME + '.')}",
+        status_code=303)
 
 
 @app.post("/customer/{customer_id}/attachments")

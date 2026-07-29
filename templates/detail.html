@@ -120,6 +120,12 @@
   <h1>{{ c.customer_name }}</h1>
   <a class="btn-edit" href="{{ rp }}/customer/{{ c.id }}/edit">Edit</a>
   <button type="button" class="btn-edit" style="margin-left:8px; cursor:pointer; font-family:inherit;" onclick="openEmailModal()">✉ Email a user</button>
+  {% if session.role == 'admin' and other_db_ready %}
+  <form method="post" action="{{ rp }}/customer/{{ c.id }}/move" style="display:inline; margin-left:8px;"
+        onsubmit="return confirm('Move “{{ c.customer_name }}” to {{ other_app_name }}?\n\nThe record, its attachments, and its heat history will be relocated and removed from this database.');">
+    <button type="submit" class="btn-edit" style="cursor:pointer; font-family:inherit;" title="Relocate this record to {{ other_app_name }}">⇄ Move to {{ other_app_name }}</button>
+  </form>
+  {% endif %}
 </header>
 
 <div class="container">
