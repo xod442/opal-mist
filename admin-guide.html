@@ -554,14 +554,17 @@ docker compose run --rm ingest</code></pre>
       <table>
         <thead><tr><th>Field</th><th>Example</th><th>Notes</th></tr></thead>
         <tbody>
-          <tr><td><strong>SMTP Host</strong></td><td><code>smtp.office365.com</code></td><td>Your mail server hostname</td></tr>
-          <tr><td><strong>SMTP Port</strong></td><td><code>587</code></td><td>587 = STARTTLS (default), 465 = SSL</td></tr>
-          <tr><td><strong>Username</strong></td><td><code>you@company.com</code></td><td>SMTP login username</td></tr>
-          <tr><td><strong>Password</strong></td><td><em>your password</em></td><td>Leave blank on save to keep the existing password</td></tr>
-          <tr><td><strong>From Address</strong></td><td><code>opal@company.com</code></td><td>Optional — defaults to username if left blank</td></tr>
+          <tr><td><strong>SMTP Host</strong></td><td><code>smtp.office365.com</code></td><td>Your mail server / relay hostname</td></tr>
+          <tr><td><strong>SMTP Port</strong></td><td><code>587</code></td><td>587 = STARTTLS (default), 465 = SSL, 25 = plain relay</td></tr>
+          <tr><td><strong>From Address</strong></td><td><code>opal@company.com</code></td><td>Sender address shown on the alert</td></tr>
           <tr><td><strong>Send Alerts To</strong></td><td><code>team@company.com</code></td><td>Recipient email address</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="callout callout-note">
+      <strong>No login required:</strong> Opal sends through an <em>unauthenticated</em> forwarder/relay — there
+      is no username or password to configure. STARTTLS is used automatically when the relay offers it.
     </div>
 
     <h3>What the alert contains</h3>
@@ -588,7 +591,7 @@ docker compose run --rm ingest</code></pre>
     <h3>Disabling alerts</h3>
     <p>
       Uncheck the <strong>Enable email alerts</strong> toggle and save. SMTP settings are retained so
-      you can re-enable without re-entering credentials.
+      you can re-enable without re-entering them.
     </p>
 
     <h3>Common SMTP providers</h3>

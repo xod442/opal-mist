@@ -429,12 +429,11 @@ def set_setting(key: str, value: str):
 
 
 def get_email_config() -> dict:
+    # The email forwarder is an unauthenticated relay — no username/password.
     return {
         "enabled":   get_setting("email_alerts_enabled") == "true",
         "host":      get_setting("email_smtp_host"),
         "port":      int(get_setting("email_smtp_port") or "587"),
-        "username":  get_setting("email_username"),
-        "password":  decrypt_secret(get_setting("email_password")),
         "from_addr": get_setting("email_from"),
         "to_addr":   get_setting("email_to"),
     }
@@ -450,7 +449,7 @@ def _make_smtp(host: str, port: int):
 
 def _smtp_send(cfg: dict, subject: str, body: str, to_addr: str = None):
     to_addr   = to_addr or cfg["to_addr"]
-    from_addr = cfg["from_addr"] or cfg["username"]
+    from_addr = cfg["from_addr"]
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"]    = from_addr
@@ -459,8 +458,11 @@ def _smtp_send(cfg: dict, subject: str, body: str, to_addr: str = None):
     with _make_smtp(cfg["host"], cfg["port"]) as smtp:
         if cfg["port"] != 465:
             smtp.ehlo()
-            smtp.starttls()
-        smtp.login(cfg["username"], cfg["password"])
+            # Use STARTTLS when the relay offers it; plain internal relays may not.
+            if smtp.has_extn("starttls"):
+                smtp.starttls()
+                smtp.ehlo()
+        # No authentication — the forwarder is an unauthenticated relay.
         smtp.sendmail(from_addr, to_addr, msg.as_string())
 
 
@@ -470,7 +472,7 @@ def send_alert(subject: str, body: str):
         cfg = get_email_config()
         if not cfg["enabled"]:
             return
-        if not all([cfg["host"], cfg["username"], cfg["password"], cfg["to_addr"]]):
+        if not all([cfg["host"], cfg["from_addr"], cfg["to_addr"]]):
             return
         _smtp_send(cfg, subject, body)
     except Exception:
@@ -480,8 +482,8 @@ def send_alert(subject: str, body: str):
 def send_test_email():
     """Send a test email. Raises on failure so the admin sees the error."""
     cfg = get_email_config()
-    if not all([cfg["host"], cfg["username"], cfg["password"], cfg["to_addr"]]):
-        raise ValueError("Email settings incomplete — fill in SMTP host, username, password, and recipient.")
+    if not all([cfg["host"], cfg["from_addr"], cfg["to_addr"]]):
+        raise ValueError("Email settings incomplete — fill in SMTP host, from address, and recipient.")
     _smtp_send(
         cfg,
         "Opal — Test Email",
@@ -494,8 +496,8 @@ def send_manual_email(to_addr: str, subject: str, body: str):
     sender sees the error. Unlike send_alert, this is an explicit action — it does
     not require the alerts toggle or the global recipient, only working SMTP creds."""
     cfg = get_email_config()
-    if not all([cfg["host"], cfg["username"], cfg["password"]]):
-        raise ValueError("Email is not configured — set SMTP host, username, and password on the Admin page first.")
+    if not all([cfg["host"], cfg["from_addr"]]):
+        raise ValueError("Email is not configured — set SMTP host and from address on the Admin page first.")
     if not to_addr:
         raise ValueError("No recipient selected.")
     _smtp_send(cfg, subject, body, to_addr=to_addr)
@@ -2152,8 +2154,6 @@ def admin_email_settings(
     email_alerts_enabled: str = Form("false"),
     email_smtp_host:      str = Form(""),
     email_smtp_port:      str = Form("587"),
-    email_username:       str = Form(""),
-    email_password:       str = Form(""),
     email_from:           str = Form(""),
     email_to:             str = Form(""),
 ):
@@ -2164,14 +2164,10 @@ def admin_email_settings(
         ("email_alerts_enabled", email_alerts_enabled),
         ("email_smtp_host",      email_smtp_host.strip()),
         ("email_smtp_port",      email_smtp_port.strip() or "587"),
-        ("email_username",       email_username.strip()),
         ("email_from",           email_from.strip()),
         ("email_to",             email_to.strip()),
     ]:
         set_setting(key, value)
-    # Only update password if one was provided (blank = keep existing)
-    if email_password:
-        set_setting("email_password", encrypt_secret(email_password))
     log_action(session["username"], "update_email_settings", "",
                f"enabled={email_alerts_enabled}, host={email_smtp_host}, to={email_to}")
     return RedirectResponse(url=f"{ROOT_PATH}/admin?msg=Email+settings+saved", status_code=303)
