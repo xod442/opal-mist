@@ -2,8 +2,12 @@ services:
 
   opal-mist:
     build: .
-    ports:
-      - "9091:8000"
+    # Host networking so the app uses the host's DNS resolvers and routing —
+    # required for the SMTP forwarder, which is only reachable from the host
+    # network stack. In host mode "ports:" is ignored, so the app binds the
+    # host port directly (keep it 9091 so the HPE edge upstream is unchanged).
+    network_mode: host
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "9091"]
     volumes:
       - ./data:/data
       # Sibling app's data dir (same host) so records can be moved between DBs.
