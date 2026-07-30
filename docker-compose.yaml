@@ -8,6 +8,12 @@ services:
     # host port directly (keep it 9091 so the HPE edge upstream is unchanged).
     network_mode: host
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "9091"]
+    # Corporate DNS resolvers. Docker otherwise substitutes public DNS
+    # (8.8.8.8) which can't resolve internal names like the SMTP relay.
+    # Set OPAL_DNS1/OPAL_DNS2 in a (gitignored) .env on the prod host.
+    dns:
+      - ${OPAL_DNS1:-8.8.8.8}
+      - ${OPAL_DNS2:-8.8.4.4}
     volumes:
       - ./data:/data
       # Sibling app's data dir (same host) so records can be moved between DBs.
